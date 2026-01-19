@@ -1,31 +1,86 @@
 # Define colours
 COLOURS = {
-    "GRASS": (110, 170, 95),     # muted green
-    "WATER": (70, 130, 180),     # steel blue
-    "FOOD": (200, 60, 60),       # soft red
+    "GRASS": (120, 190, 114),
 
-    "AGENT": (40, 120, 115),     # teal
+    "WATER": (70, 130, 180),
+    "WATER_RIM": (95, 155, 205),
+    "WATER_SPARKLE": (150, 200, 235),
 
-    "THIRSTY": (50, 110, 220),     # colder blue
-    "HUNGRY": (150, 70, 180),    # muted purple
+    "FOOD": (200, 60, 60),
+    "FOOD_RIM": (120, 20, 20),
 
-    "TIRED": (200, 180, 90),     # Warm amber
-    "DEAD": (70, 70, 70)      # grey
+    "BUSH": (80, 140, 90),
+    "BUSH_OUTLINE": (55, 110, 70),
+
+    "OUTLINE": (20, 20, 20),
 }
 
-# Define screen width and height
+# Screen
 WIDTH, HEIGHT = 1280, 720
-
-# Defining multiple agents
-NUM_AGENTS = 20
-AGENT_RADIUS = 8
-
-# Define FPS
 FPS = 60
 
-# Define thresholds
+# Agents
+NUM_AGENTS = 20
+AGENT_RADIUS = 8
+# Based off seconds (set to 180 for 3 minutes, 60 for 1 minute testing)
+MAX_AGE = 60.0
+
+# Thresholds
 THRESHOLDS = {
-    "HUNGER": 40,
-    "THIRST": 60,
-    "ENERGY_LOW": 30
+    "HUNGER_SEEK": 60.0,
+    "HUNGER_CRIT": 90.0,
+
+    "THIRST_SEEK": 50.0,
+    "THIRST_CRIT": 90.0,
+
+    "ENERGY_SLOW": 30.0,
+    "ENERGY_CRIT": 10.0
+}
+
+# Rates (per second)
+RATES = {
+    "HUNGER_UP": 0.05,
+    "THIRST_UP": 0.07,
+    "ENERGY_DOWN": 0.03,
+
+    # Health model
+    "HEALTH_REGEN": 0.8,                # when doing okay
+    "HEALTH_DRAIN_BASE": 0.4,           # baseline
+    # extra drain when hunger/thirst past SEEK, or energy low
+    "HEALTH_DRAIN_SEEK": 0.8,
+    "HEALTH_DRAIN_CRIT": 2.0,           # extra drain if any critical
+    # per second energy regen when resting (energy <= crit)
+    "REST_ENERGY_REGEN": 6.0
+}
+
+RESOURCES = {
+    # pond blob
+    "POND_MARGIN": 100,
+    "POND_CIRCLES": 8,
+    "POND_RADIUS_MIN": 35,
+    "POND_RADIUS_MAX": 80,
+
+    # bushes + food dots
+    "NUM_BUSHES": 4,
+    "BUSH_BLOB_CIRCLES": 3,
+    "BUSH_BLOB_RADIUS_MIN": 26,
+    "BUSH_BLOB_RADIUS_MAX": 42,
+    "BUSH_MIN_DIST": 140,
+    "BUSH_SPAWN_ATTEMPTS": 50,
+
+    "FOOD_PER_BUSH_MIN": 2,
+    "FOOD_PER_BUSH_MAX": 4,
+    "FOOD_RADIUS": 6,
+    "FOOD_RIM_THICKNESS": 2,
+    "FOOD_EDGE_MARGIN": 8,
+    "FOOD_MIN_GAP": 6,
+    "FOOD_SPAWN_ATTEMPTS": 200,
+
+    "POND_SPARKLES": 25,
+    "POND_SPARKLE_R_MIN": 1,
+    "POND_SPARKLE_R_MAX": 3,
+
+    "FOOD_REGEN_SECONDS": 5.0,
+
+    "POND_BUSH_BUFFER": 140,
 }

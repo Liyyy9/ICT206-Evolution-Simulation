@@ -1,5 +1,21 @@
 import random
 from dataclasses import dataclass
+from typing import Tuple
+import config as cfg
+
+Colour = Tuple[int, int, int]
+
+
+def clamp(v: float, lo: float, hi: float) -> float:
+    return max(lo, min(hi, v))
+
+
+def _random_alive_colour() -> Colour:
+    return (
+        random.randint(90, 230),
+        random.randint(90, 230),
+        random.randint(90, 230)
+    )
 
 
 @dataclass
@@ -10,15 +26,14 @@ class Agent:
     velocityY: float
 
     # internal state
-    age: int = 0
+    age: float = 0
     hunger: float = 0.0
     thirst: float = 0.0
     energy: float = 100.0
     health: float = 100.0
-    
+
+    colour: Colour = (255, 255, 255)    # randomised at spawn
     alive: bool = True
-    dying: bool = False
-    dying_progress: float = 0.0
 
 
 def create_agent(width: int, height: int, radius: int) -> Agent:
@@ -26,43 +41,89 @@ def create_agent(width: int, height: int, radius: int) -> Agent:
         x=float(random.randint(radius, width - radius)),
         y=float(random.randint(radius, height - radius)),
         velocityX=float(random.choice([-2, -1, 1, 2])),
-        velocityY=float(random.choice([-2, -1, 1, 2]))
+        velocityY=float(random.choice([-2, -1, 1, 2])),
+        colour=_random_alive_colour()
     )
 
 
-def update_internal_state(agent, dt: float):
-    if not agent.alive:
+def update_internal_state(a: Agent, dt: float) -> None:
+    """
+    Updates stats using dt (seconds).
+    Sets a.alive=False when dead. (main.py removes dead agents)
+    """
+
+    if not a.alive:
         return
 
-    #If dying
-    if agent.dying:
-        DYING_SECONDS = 1.5
-        agent.dying_progress += dt / DYING_SECONDS
+    a.age += dt
 
-        if agent.dying_progress >= 1.0:
-            agent.dying_progress = 1.0
-            agent.alive = False
-            agent.dying = False
-            agent.velocityX = 0
-            agent.velocityY = 0
-        return
+    # Change over time (dt-based)
+    a.hunger += cfg.RATES["HUNGER_UP"] * dt
+    a.thirst += cfg.RATES["THIRST_UP"] * dt
+    a.energy -= cfg.RATES["ENERGY_DOWN"] * dt
 
-    # Normal living updates
-    agent.age += 1
-    agent.hunger += 0.07
-    agent.thirst += 0.05
-    agent.energy -= 0.02
+    # Clamp core stats
+    a.hunger = clamp(a.hunger, 0.0, 100.0)
+    a.thirst = clamp(a.thirst, 0.0, 100.0)
+    a.energy = clamp(a.energy, 0.0, 100.0)
+    a.health = clamp(a.health, 0.0, 100.0)
 
-    if agent.energy <= 0:
-        agent.energy = 0
-        agent.alive = False
-        
-    if agent.health <= 0 or agent.hunger >= 100 or agent.thirst >= 100 or agent.energy <= 0:
-        start_dying(agent)
-        
-def start_dying(agent):
-    if agent.dying or not agent.alive:
-        return
-    agent.dying = True
-    agent.dying_progress = 0.0
+    # Rest rules (energy critical)
+    # If energy is critical, the agent "rests" and regains energy
+    if (a.energy <= cfg.THRESHOLDS["ENERGY_CRIT"]):
+        a.energy += cfg.RATES["REST_ENERGY_REGEN"] * dt
+        a.energy = clamp(a.energy, 0.0, 100.0)
 
+    # Health
+    drain = cfg.RATES["HEALTH_DRAIN_BASE"]
+
+    # SEEK-level penalties
+    if a.thirst >= cfg.THRESHOLDS["THIRST_SEEK"]:
+        drain += cfg.RATES["HEALTH_DRAIN_SEEK"]
+    if a.hunger >= cfg.THRESHOLDS["HUNGER_SEEK"]:
+        drain += cfg.RATES["HEALTH_DRAIN_SEEK"]
+    if a.energy <= cfg.THRESHOLDS["ENERGY_SLOW"]:
+        drain += cfg.RATES["HEALTH_DRAIN_SEEK"]
+
+    # CRITICAL-level penalties
+    if a.thirst >= cfg.THRESHOLDS["THIRST_CRIT"]:
+        drain += cfg.RATES["HEALTH_DRAIN_CRIT"]
+    if a.hunger >= cfg.THRESHOLDS["HUNGER_CRIT"]:
+        drain += cfg.RATES["HEALTH_DRAIN_CRIT"]
+    if a.energy <= cfg.THRESHOLDS["ENERGY_CRIT"]:
+        drain += cfg.RATES["HEALTH_DRAIN_CRIT"]
+
+    # Small regen if doing okay (not in SEEK zones and energy not low)
+    doing_okay = (
+        a.hunger < cfg.THRESHOLDS["HUNGER_SEEK"]
+        and a.thirst < cfg.THRESHOLDS["THIRST_SEEK"]
+        and a.energy > cfg.THRESHOLDS["ENERGY_SLOW"]
+    )
+    if doing_okay:
+        a.health += cfg.RATES["HEALTH_REGEN"] * dt
+
+    # Apply drain
+    a.health -= drain * dt
+    a.health = clamp(a.health, 0.0, 100.0)
+
+    # --- death conditions ---
+    if a.health <= 0.0 or a.age >= cfg.MAX_AGE:
+        a.alive = False
+
+
+def movement_multiplier(a: Agent) -> float:
+    """
+    Low energy slows the agent down smoothly.
+    energy >= ENERGY_SLOW -> 1.0
+    energy <= ENERGY_CRIT -> 0.0 (rest)
+    """
+    slow = cfg.THRESHOLDS["ENERGY_SLOW"]
+    crit = cfg.THRESHOLDS["ENERGY_CRIT"]
+
+    if a.energy <= crit:
+        return 0.0
+    if a.energy >= slow:
+        return 1.0
+
+    # linear scale between crit..slow
+    return (a.energy - crit) / (slow - crit)
