@@ -77,12 +77,6 @@ def update_internal_state(a: Agent, dt: float) -> None:
     a.energy = clamp(a.energy, 0.0, 100.0)
     a.health = clamp(a.health, 0.0, 100.0)
 
-    # Rest rules (energy critical)
-    # If energy is critical, the agent "rests" and regains energy
-    if (a.energy <= cfg.THRESHOLDS["ENERGY_CRIT"]):
-        a.energy += cfg.RATES["REST_ENERGY_REGEN"] * dt
-        a.energy = clamp(a.energy, 0.0, 100.0)
-
     # Health
     drain = cfg.RATES["HEALTH_DRAIN_BASE"]
 
@@ -122,17 +116,35 @@ def update_internal_state(a: Agent, dt: float) -> None:
 
 def movement_multiplier(a: Agent) -> float:
     """
-    Low energy slows the agent down smoothly.
-    energy >= ENERGY_SLOW -> 1.0
-    energy <= ENERGY_CRIT -> 0.0 (rest)
+    Simplified energy:
+    - Energy only affects speed (no resting state)
+    - Agents start slow and ramp up over time (Option A)
     """
+    # 1) Energy → speed factor (never 0)
     slow = cfg.THRESHOLDS["ENERGY_SLOW"]
     crit = cfg.THRESHOLDS["ENERGY_CRIT"]
 
-    if a.energy <= crit:
-        return 0.0
-    if a.energy >= slow:
-        return 1.0
+    # floor multiplier so they never "stop in place"
+    min_mult = cfg.THRESHOLDS.get("ENERGY_MIN_MULT", 0.35)
 
-    # linear scale between crit..slow
-    return (a.energy - crit) / (slow - crit)
+    if a.energy >= slow:
+        energy_mult = 1.0
+    elif a.energy <= crit:
+        energy_mult = min_mult
+    else:
+        # linear between crit..slow
+        t = (a.energy - crit) / (slow - crit)
+        energy_mult = min_mult + t * (1.0 - min_mult)
+
+    # 2) Option A: "start slow" ramp (time-based)
+    # ramps from START_SPEED_MULT -> 1.0 over SPEED_RAMP_SECONDS
+    start_mult = cfg.THRESHOLDS.get("START_SPEED_MULT", 0.55)
+    ramp_s = cfg.THRESHOLDS.get("SPEED_RAMP_SECONDS", 45.0)
+
+    if ramp_s <= 0:
+        ramp_mult = 1.0
+    else:
+        ramp_mult = min(1.0, start_mult + (a.age / ramp_s)
+                        * (1.0 - start_mult))
+
+    return energy_mult * ramp_mult

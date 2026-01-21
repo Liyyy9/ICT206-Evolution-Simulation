@@ -34,12 +34,17 @@ THRESHOLDS = {
 
     # Thirst (0...100)
     "THIRST_SEEK": 25.0,        # Start looking for water
-    "THIRST_OK": 8.0,          # Stop drinking
+    "THIRST_OK": 8.0,           # Stop drinking
     "THIRST_CRIT": 80.0,
 
     # Energy (100...0)
     "ENERGY_SLOW": 40.0,        # Start slowing down
-    "ENERGY_CRIT": 15.0
+    "ENERGY_CRIT": 15.0,
+
+    # Simplified energy speed behavior
+    "ENERGY_MIN_MULT": 0.35,     # never fully stop
+    "START_SPEED_MULT": 0.55,    # start slow
+    "SPEED_RAMP_SECONDS": 45.0,  # reach full speed after ~45s
 }
 
 # Rates (per second)
@@ -55,9 +60,6 @@ RATES = {
     # extra drain when hunger/thirst past SEEK, or energy low
     "HEALTH_DRAIN_SEEK": 0.18,
     "HEALTH_DRAIN_CRIT": 0.9,           # extra drain if any critical
-
-    # per second energy regen when resting (energy <= crit)
-    "REST_ENERGY_REGEN": 20.0
 }
 
 RESOURCES = {
@@ -82,7 +84,7 @@ RESOURCES = {
     "FOOD_EDGE_MARGIN": 8,
     "FOOD_MIN_GAP": 10,
     "FOOD_SPAWN_ATTEMPTS": 200,
-    "FOOD_REGEN_SECONDS": 2.0,
+    "FOOD_REGEN_SECONDS": 5.0,
 
     # Pond
     "POND_SPARKLES": 25,
@@ -96,4 +98,6 @@ RESOURCES = {
     "DRINK_FULL_LEVEL": 10.0,    # stop drinking
     "DRINK_INTERVAL": 0.5,      # how long they stop at a pond
     "DRINK_AMOUNT": 4.0,        # how much thirst is reduced
+    "ENERGY_FROM_DRINK": 8.0,
+    "ENERGY_FROM_EAT": 18.0,
 }

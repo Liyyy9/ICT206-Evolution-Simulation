@@ -54,6 +54,8 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
         while a.drink_timer >= cfg.RESOURCES["DRINK_INTERVAL"]:
             a.drink_timer -= cfg.RESOURCES["DRINK_INTERVAL"]
             a.thirst = max(0.0, a.thirst - cfg.RESOURCES["DRINK_AMOUNT"])
+            a.energy = min(100.0, a.energy +
+                           cfg.RESOURCES["ENERGY_FROM_DRINK"])
 
         # Freeze position while drinking (IMPORTANT: do NOT zero velocity)
         return True
@@ -96,6 +98,8 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
 
             if ate:
                 a.hunger = max(0.0, a.hunger - cfg.RESOURCES["EAT_AMOUNT"])
+                a.energy = min(100.0, a.energy +
+                               cfg.RESOURCES["ENERGY_FROM_EAT"])
                 a.eat_pause = cfg.RESOURCES["EAT_PAUSE"]
                 a.interact_cooldown = INTERACT_COOLDOWN
                 _nudge_velocity(a)
