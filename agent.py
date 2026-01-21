@@ -41,6 +41,8 @@ class Agent:
     eat_pause: float = 0.0
     drink_timer: float = 0.0
 
+    interact_cooldown: float = 0.0
+
 
 def create_agent(agent_id: int, width: int, height: int, radius: int) -> Agent:
     return Agent(
