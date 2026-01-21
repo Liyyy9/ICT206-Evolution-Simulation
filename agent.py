@@ -20,6 +20,7 @@ def _random_alive_colour() -> Colour:
 
 @dataclass
 class Agent:
+    id: int
     x: float
     y: float
     velocityX: float
@@ -35,9 +36,15 @@ class Agent:
     colour: Colour = (255, 255, 255)    # randomised at spawn
     alive: bool = True
 
+    # action state
+    action: str = "WANDER"
+    eat_pause: float = 0.0
+    drink_timer: float = 0.0
 
-def create_agent(width: int, height: int, radius: int) -> Agent:
+
+def create_agent(agent_id: int, width: int, height: int, radius: int) -> Agent:
     return Agent(
+        id=agent_id,
         x=float(random.randint(radius, width - radius)),
         y=float(random.randint(radius, height - radius)),
         velocityX=float(random.choice([-2, -1, 1, 2])),

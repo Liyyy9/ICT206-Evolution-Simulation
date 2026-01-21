@@ -1,12 +1,11 @@
 # resources.py
 import random
+import math
 from dataclasses import dataclass, field
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import pygame
 import config as cfg
-
-Colour = Tuple[int, int, int]
 
 
 def _clamp(v: float, lo: float, hi: float) -> float:
@@ -23,7 +22,6 @@ def _rand_point(margin: int) -> Tuple[float, float]:
 class FoodItem:
     x: float
     y: float
-    bites_remaining: int = 0  # unused until consumption phase
 
 
 @dataclass
@@ -46,9 +44,7 @@ class FoodBush:
                 self.food.append(item)
             safety -= 1
 
-
-    def _new_food_item(self) -> FoodItem | None:
-        import math
+    def _new_food_item(self) -> Optional[FoodItem]:
 
         food_r = cfg.RESOURCES["FOOD_RADIUS"]
         rim = cfg.RESOURCES["FOOD_RIM_THICKNESS"]
@@ -111,7 +107,6 @@ class FoodBush:
                 self.food.append(item)
 
 
-
 @dataclass
 class Pond:
     circles: List[Tuple[float, float, float]]
@@ -148,7 +143,7 @@ def create_pond() -> Pond:
 
 def pond_bounds(pond: Pond) -> Tuple[float, float, float]:
     """
-    Returns (cx, cy, r_max) so we can keep bushes away.
+    Returns (cx, cy, r_max) so we can keep bushes away from pond.
     """
     cx = sum(c[0] for c in pond.circles) / len(pond.circles)
     cy = sum(c[1] for c in pond.circles) / len(pond.circles)
@@ -314,14 +309,92 @@ def draw_resources(screen: pygame.Surface, pond: Pond, bushes: List[FoodBush]) -
                 int(r)
             )
 
-        fr = cfg.RESOURCES["FOOD_RADIUS"]
-        rim = cfg.RESOURCES["FOOD_RIM_THICKNESS"]
+    fr = cfg.RESOURCES["FOOD_RADIUS"]
+    rim = cfg.RESOURCES["FOOD_RIM_THICKNESS"]
 
-        for b in bushes:
-            for f in b.food:
-                # rim
-                pygame.draw.circle(
-                    screen, cfg.COLOURS["FOOD_RIM"], (int(f.x), int(f.y)), fr + rim)
-                # fill
-                pygame.draw.circle(
-                    screen, cfg.COLOURS["FOOD"], (int(f.x), int(f.y)), fr)
+    for b in bushes:
+        for f in b.food:
+            pygame.draw.circle(
+                screen, cfg.COLOURS["FOOD_RIM"], (int(f.x), int(f.y)), fr + rim)
+            pygame.draw.circle(
+                screen, cfg.COLOURS["FOOD"], (int(f.x), int(f.y)), fr)
+
+# --------------------------
+# COLLISION HELPERS (solid)
+# --------------------------
+
+
+def _closest_collision_circle(x: float, y: float, radius: float, circles):
+    best = None
+    best_overlap = 0.0
+    for (cx, cy, cr) in circles:
+        dx = x - cx
+        dy = y - cy
+        dist = math.hypot(dx, dy)
+        overlap = (radius + cr) - dist
+        if overlap > best_overlap:
+            best_overlap = overlap
+            best = (cx, cy, cr, dist, overlap)
+    return best
+
+
+def collide_with_pond(x: float, y: float, agent_r: float, pond: Pond):
+    return _closest_collision_circle(x, y, agent_r, pond.circles)
+
+
+def collide_with_bush(x: float, y: float, agent_r: float, bush: FoodBush):
+    return _closest_collision_circle(x, y, agent_r, bush.blob_circles)
+
+
+def bounce_off_circle(nx: float, ny: float, vx: float, vy: float,
+                      cx: float, cy: float, cr: float, dist: float, overlap: float):
+    if dist == 0:
+        nxn, nyn = 1.0, 0.0
+    else:
+        nxn = (nx - cx) / dist
+        nyn = (ny - cy) / dist
+
+    push = overlap + 1.0
+    nx += nxn * push
+    ny += nyn * push
+
+    dot = vx * nxn + vy * nyn
+    rvx = vx - 2 * dot * nxn
+    rvy = vy - 2 * dot * nyn
+
+    return nx, ny, rvx, rvy
+
+
+def pick_food_from_bush(bush: FoodBush) -> bool:
+    if not bush.food:
+        return False
+    idx = random.randrange(len(bush.food))
+    bush.food.pop(idx)
+    return True
+
+
+def touch_circle(x: float, y: float, agent_r: float, circles, eps: float = 2.0):
+    """
+    Returns (cx, cy, cr, dist) if agent is within contact distance of any circle,
+    else None.
+    Contact distance: dist <= agent_r + cr + eps
+    """
+    best = None
+    best_dist = float("inf")
+    for (cx, cy, cr) in circles:
+        dx = x - cx
+        dy = y - cy
+        dist = math.hypot(dx, dy)
+        if dist <= (agent_r + cr + eps):
+            if dist < best_dist:
+                best_dist = dist
+                best = (cx, cy, cr, dist)
+    return best
+
+
+def touch_pond(x: float, y: float, agent_r: float, pond: Pond, eps: float = 2.0):
+    return touch_circle(x, y, agent_r, pond.circles, eps)
+
+
+def touch_bush(x: float, y: float, agent_r: float, bush: FoodBush, eps: float = 2.0):
+    return touch_circle(x, y, agent_r, bush.blob_circles, eps)
