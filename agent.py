@@ -1,6 +1,6 @@
 import random
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Optional
 import config as cfg
 
 Colour = Tuple[int, int, int]
@@ -43,9 +43,16 @@ class Agent:
 
     interact_cooldown: float = 0.0
 
+    # vision
+    vision_radius: float = 220.0
+    steer_strength: float = 0.18
+    wander_angle: float = 0.0
+    waypoint: Tuple[float, float] = (0.0, 0.0)
+    waypoint_timer: float = 0.0
+
 
 def create_agent(agent_id: int, width: int, height: int, radius: int) -> Agent:
-    return Agent(
+    a = Agent(
         id=agent_id,
         x=float(random.randint(radius, width - radius)),
         y=float(random.randint(radius, height - radius)),
@@ -53,6 +60,19 @@ def create_agent(agent_id: int, width: int, height: int, radius: int) -> Agent:
         velocityY=float(random.choice([-2, -1, 1, 2])),
         colour=_random_alive_colour()
     )
+
+    a.vision_radius = cfg.SENSING["VISION_RADIUS"]
+    a.steer_strength = cfg.SENSING["STEER_STRENGTH"]
+    a.wander_angle = random.uniform(0, 6.28318)
+
+    m = cfg.SENSING["WAYPOINT_MARGIN"]
+    a.waypoint = (
+        random.uniform(m, width - m),
+        random.uniform(m, height - m)
+    )
+    a.waypoint_timer = random.uniform(0.0, cfg.SENSING["WAYPOINT_TIMEOUT"])
+
+    return a
 
 
 def update_internal_state(a: Agent, dt: float) -> None:

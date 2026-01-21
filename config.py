@@ -101,3 +101,14 @@ RESOURCES = {
     "ENERGY_FROM_DRINK": 8.0,
     "ENERGY_FROM_EAT": 18.0,
 }
+
+SENSING = {
+    "VISION_RADIUS": 220.0,        # px; try 180–280
+    "STEER_STRENGTH": 0.18,        # 0..1; higher = more direct steering
+    "WANDER_JITTER": 0.35,         # how much random turn during wandering
+    "TARGET_REACHED_DIST": 14.0,   # px; when close enough to food, treat as "arrived"
+
+    "WAYPOINT_MARGIN": 120.0,      # keeps targets away from edges
+    "WAYPOINT_REACHED": 35.0,      # how close before picking a new target
+    "WAYPOINT_TIMEOUT": 4.0,       # seconds before forcing a new waypoint
+}
