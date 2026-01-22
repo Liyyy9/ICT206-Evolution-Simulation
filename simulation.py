@@ -49,7 +49,8 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
 
             # pick a new waypoint away from resources so they move off nicely
             a.waypoint = _random_waypoint_avoiding_resources(pond, bushes)
-            a.waypoint_timer = random.uniform(0.0, cfg.SENSING["WAYPOINT_TIMEOUT"])
+            a.waypoint_timer = random.uniform(
+                0.0, cfg.SENSING["WAYPOINT_TIMEOUT"])
             return True
 
         a.drink_timer += dt
@@ -59,7 +60,8 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
 
             # optional simplified energy boost
             if "ENERGY_FROM_DRINK" in cfg.RESOURCES:
-                a.energy = min(100.0, a.energy + cfg.RESOURCES["ENERGY_FROM_DRINK"])
+                a.energy = min(100.0, a.energy +
+                               cfg.RESOURCES["ENERGY_FROM_DRINK"])
 
         return True  # frozen while drinking
 
@@ -106,6 +108,17 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
         if touching is None:
             continue
 
+        # NOT HUNGRY: bounce away immediately (if not on cooldown)
+        if a.interact_cooldown <= 0.0 and a.hunger < cfg.THRESHOLDS["HUNGER_SEEK"]:
+            hit = res.collide_with_bush(nx, ny, cfg.AGENT_RADIUS, b)
+            if hit is not None:
+                _apply_bounce(a, hit)
+                if a.action == "WANDER":
+                    a.waypoint = _random_waypoint_avoiding_resources(
+                        pond, bushes)
+                    a.waypoint_timer = 0.0
+                return True
+
         # hungry & can interact -> try eat ONE food dot
         if a.interact_cooldown <= 0.0 and a.hunger >= cfg.THRESHOLDS["HUNGER_SEEK"]:
             ate = res.pick_food_from_bush(b)
@@ -113,7 +126,8 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
             if ate:
                 a.hunger = max(0.0, a.hunger - cfg.RESOURCES["EAT_AMOUNT"])
                 if "ENERGY_FROM_EAT" in cfg.RESOURCES:
-                    a.energy = min(100.0, a.energy + cfg.RESOURCES["ENERGY_FROM_EAT"])
+                    a.energy = min(100.0, a.energy +
+                                   cfg.RESOURCES["ENERGY_FROM_EAT"])
 
                 a.eat_pause = cfg.RESOURCES["EAT_PAUSE"]
                 a.interact_cooldown = INTERACT_COOLDOWN
@@ -128,11 +142,12 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
 
                 # IMPORTANT: if wandering, pick a new waypoint
                 if a.action == "WANDER":
-                    a.waypoint = _random_waypoint_avoiding_resources(pond, bushes)
+                    a.waypoint = _random_waypoint_avoiding_resources(
+                        pond, bushes)
                     a.waypoint_timer = 0.0
                 return True
 
-        # not hungry OR on cooldown -> solid bounce
+        # on cooldown -> solid bounce
         hit = res.collide_with_bush(nx, ny, cfg.AGENT_RADIUS, b)
         if hit is not None:
             _apply_bounce(a, hit)
@@ -145,14 +160,27 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
     # ---------------------------------------------------------
     # SOLID POND COLLISION (when not drinking)
     # ---------------------------------------------------------
-    hit = res.collide_with_pond(nx, ny, cfg.AGENT_RADIUS, pond)
-    if hit is not None:
-        _apply_bounce(a, hit)
+    if a.action != "DRINK":
+        # NOT THIRSTY: bounce away immediately
+        if a.thirst < cfg.THRESHOLDS["THIRST_SEEK"]:
+            hit = res.collide_with_pond(nx, ny, cfg.AGENT_RADIUS, pond)
+            if hit is not None:
+                _apply_bounce(a, hit)
+                if a.action == "WANDER":
+                    a.waypoint = _random_waypoint_avoiding_resources(
+                        pond, bushes)
+                    a.waypoint_timer = 0.0
+                return True
 
-        if a.action == "WANDER":
-            a.waypoint = _random_waypoint_avoiding_resources(pond, bushes)
-            a.waypoint_timer = 0.0
-        return True
+        # Otherwise handle normal collision
+        hit = res.collide_with_pond(nx, ny, cfg.AGENT_RADIUS, pond)
+        if hit is not None:
+            _apply_bounce(a, hit)
+
+            if a.action == "WANDER":
+                a.waypoint = _random_waypoint_avoiding_resources(pond, bushes)
+                a.waypoint_timer = 0.0
+            return True
 
     # ---------------------------------------------------------
     # SCREEN BOUNDS
@@ -325,6 +353,17 @@ def _apply_bounce(a: ag.Agent, hit_tuple) -> None:
     )
     a.velocityX *= BOUNCE_DAMP
     a.velocityY *= BOUNCE_DAMP
+
+    # Apply opposite vector to push away from collision center
+    if dist > 1e-2:
+        # Calculate unit vector pointing away from collision center
+        away_x = (a.x - cx) / dist
+        away_y = (a.y - cy) / dist
+        # Push velocity in the away direction
+        push_strength = 3.0
+        a.velocityX += away_x * push_strength
+        a.velocityY += away_y * push_strength
+
     _clamp_speed(a)
     _safe_pos(a)
 
