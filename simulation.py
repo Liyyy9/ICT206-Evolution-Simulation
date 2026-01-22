@@ -213,17 +213,40 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
 def _choose_target(a: ag.Agent, pond: res.Pond, bushes: list[res.FoodBush]):
     vision = getattr(a, "vision_radius", cfg.SENSING["VISION_RADIUS"])
 
-    # 1) thirst priority
-    if a.thirst >= cfg.THRESHOLDS["THIRST_SEEK"]:
-        pcx, pcy = _pond_center(pond)
-        if _dist(a.x, a.y, pcx, pcy) <= vision:
-            return (pcx, pcy)
+    # Check what's available in vision
+    pond_visible = False
+    pcx, pcy = _pond_center(pond)
+    if _dist(a.x, a.y, pcx, pcy) <= vision:
+        pond_visible = True
 
-    # 2) hunger next
-    if a.hunger >= cfg.THRESHOLDS["HUNGER_SEEK"]:
-        food = _nearest_food_in_vision(a, bushes, vision)
-        if food is not None:
-            return food
+    food_visible = None
+    if bushes:
+        food_visible = _nearest_food_in_vision(a, bushes, vision)
+
+    # Both thirsty and hungry: prioritize by motivation level
+    thirsty = a.thirst >= cfg.THRESHOLDS["THIRST_SEEK"]
+    hungry = a.hunger >= cfg.THRESHOLDS["HUNGER_SEEK"]
+
+    if thirsty and hungry:
+        # Both needs active: go for whichever is MORE urgent
+        if a.thirst >= a.hunger:
+            if pond_visible:
+                return (pcx, pcy)
+            elif food_visible is not None:
+                return food_visible
+        else:
+            if food_visible is not None:
+                return food_visible
+            elif pond_visible:
+                return (pcx, pcy)
+    elif thirsty:
+        # Only thirsty
+        if pond_visible:
+            return (pcx, pcy)
+    elif hungry:
+        # Only hungry
+        if food_visible is not None:
+            return food_visible
 
     return None
 
