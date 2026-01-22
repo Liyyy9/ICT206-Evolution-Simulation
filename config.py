@@ -13,6 +13,17 @@ COLOURS = {
     "BUSH_OUTLINE": (55, 110, 70),
 
     "OUTLINE": (20, 20, 20),
+
+    # Chatbox colors (state indicators)
+    "CHATBOX_BASE": (186, 186, 177),    # Light grey (default)
+    "CHATBOX_CRITICAL": (255, 150, 150),  # Red
+}
+
+# ICONS for UI
+ICONS = {
+    "THIRST": "assets/mug.png",
+    "HUNGER": "assets/apple.png",
+    "LOVE": "assets/love.png",
 }
 
 # Screen

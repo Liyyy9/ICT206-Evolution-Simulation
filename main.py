@@ -5,6 +5,7 @@ import config as cfg
 import agent as ag
 import resources as res
 import simulation as sim
+import interaction
 
 pygame.init()
 screen = pygame.display.set_mode((cfg.WIDTH, cfg.HEIGHT))
@@ -25,6 +26,13 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  # Left click
+                mouse_pos = pygame.mouse.get_pos()
+                clicked_agent = interaction.get_agent_at_mouse(
+                    agents, mouse_pos)
+                if clicked_agent is not None:
+                    interaction.toggle_follow(clicked_agent)
 
     screen.fill(cfg.COLOURS["GRASS"])
 
@@ -59,6 +67,19 @@ while running:
         )
 
     agents = alive
+
+    # Draw state box for hovered agent or followed agent
+    mouse_pos = pygame.mouse.get_pos()
+    hovered_agent = interaction.get_agent_at_mouse(agents, mouse_pos)
+    followed_agent = interaction.get_followed_agent(agents)
+
+    # Show chatbox for hovered agent
+    if hovered_agent is not None:
+        interaction.draw_agent_state_box(screen, hovered_agent)
+    # Or show chatbox for followed agent if they exist
+    elif followed_agent is not None:
+        interaction.draw_agent_state_box(screen, followed_agent)
+
     pygame.display.flip()
 
 pygame.quit()
