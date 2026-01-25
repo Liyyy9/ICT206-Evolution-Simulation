@@ -63,7 +63,7 @@ class Agent:
     interact_cooldown: float = 0.0
 
     # memory
-    food_memory: list = None  # List of (x, y, timestamp) tuples
+    food_memory: Optional[list] = None  # List of (x, y, timestamp) tuples
     last_water_pos: Optional[Tuple[float, float]] = None
     last_water_time_ms: int = -1
 

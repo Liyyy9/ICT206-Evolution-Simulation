@@ -155,6 +155,8 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
 
         # LOG BUSH IN MEMORY (discovery or update)
         if touching is not None:
+            if not hasattr(a, "food_memory") or a.food_memory is None:
+                a.food_memory = []
             bush_pos = (b.x, b.y)
             already_remembered = any(
                 abs(mem[0] - bush_pos[0]) < 5 and abs(mem[1] - bush_pos[1]) < 5
@@ -176,7 +178,7 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
                 a.has_eaten = True
 
                 # If first successful eat+drink cycle, set home location
-                if a.has_drunk and a.home_pos is None:
+                if a.has_drunk and a.home_pos is None and a.last_water_pos is not None:
                     home_x = (b.x + a.last_water_pos[0]) / 2.0
                     home_y = (b.y + a.last_water_pos[1]) / 2.0
                     a.home_pos = (home_x, home_y)
