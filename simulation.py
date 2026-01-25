@@ -1,5 +1,6 @@
 import math
 import random
+import pygame
 
 import config as cfg
 import resources as res
@@ -11,6 +12,34 @@ import agent as ag
 INTERACT_COOLDOWN = 0.8     # seconds after eat/drink before interacting again
 MAX_SPEED = 3.5             # clamp velocity so it can't explode
 BOUNCE_DAMP = 0.92          # damp bounce so energy doesn't grow
+
+
+def _is_memory_expired(timestamp_ms: int) -> bool:
+    """Check if a memory entry is older than MEMORY_TIMEOUT."""
+    if timestamp_ms < 0:
+        return True
+    current_time_ms = pygame.time.get_ticks()
+    timeout_ms = cfg.MEMORY["TIMEOUT"] * 1000
+    return (current_time_ms - timestamp_ms) > timeout_ms
+
+
+def _clean_food_memory(a: ag.Agent) -> None:
+    """Remove expired food memories."""
+    if not hasattr(a, "food_memory") or not a.food_memory:
+        return
+    a.food_memory = [
+        (x, y, ts) for x, y, ts in a.food_memory
+        if not _is_memory_expired(ts)
+    ]
+
+
+def _clean_water_memory(a: ag.Agent) -> None:
+    """Clear water memory if expired."""
+    if not hasattr(a, "last_water_time_ms"):
+        return
+    if _is_memory_expired(a.last_water_time_ms):
+        a.last_water_pos = None
+        a.last_water_time_ms = -1
 
 
 def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBush]) -> bool:
@@ -44,6 +73,14 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
             a.action = "WANDER"
             a.drink_timer = 0.0
             a.interact_cooldown = INTERACT_COOLDOWN
+            a.has_drunk = True
+
+            # If first successful eat+drink cycle, set home location
+            if a.has_eaten and a.home_pos is None and a.last_water_pos:
+                home_x = (a.last_water_pos[0] + a.x) / 2.0
+                home_y = (a.last_water_pos[1] + a.y) / 2.0
+                a.home_pos = (home_x, home_y)
+
             _nudge_velocity(a)
             _clamp_speed(a)
 
@@ -89,6 +126,14 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
     ny = a.y + vy * mult * move_scale
 
     # ---------------------------------------------------------
+    # WATER MEMORY: Log pond location on any contact
+    # ---------------------------------------------------------
+    if res.touch_pond(nx, ny, cfg.AGENT_RADIUS, pond, eps=6.0) is not None:
+        px, py = _pond_center(pond)
+        a.last_water_pos = (px, py)
+        a.last_water_time_ms = pygame.time.get_ticks()
+
+    # ---------------------------------------------------------
     # START DRINK if thirsty + touching pond rim
     # ---------------------------------------------------------
     if (
@@ -101,60 +146,68 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
         return True  # freeze this frame
 
     # ---------------------------------------------------------
-    # BUSH INTERACTION (eat one dot if hungry; otherwise bounce)
+    # BUSH INTERACTION
     # ---------------------------------------------------------
     for b in bushes:
         touching = res.touch_bush(nx, ny, cfg.AGENT_RADIUS, b, eps=4.0)
         if touching is None:
             continue
 
-        # NOT HUNGRY: bounce away immediately (if not on cooldown)
-        if a.interact_cooldown <= 0.0 and a.hunger < cfg.THRESHOLDS["HUNGER_SEEK"]:
-            hit = res.collide_with_bush(nx, ny, cfg.AGENT_RADIUS, b)
-            if hit is not None:
-                _apply_bounce(a, hit)
-                if a.action == "WANDER":
-                    a.waypoint = _random_waypoint_avoiding_resources(
-                        pond, bushes)
-                    a.waypoint_timer = 0.0
-                return True
+        # LOG BUSH IN MEMORY (discovery or update)
+        if touching is not None:
+            bush_pos = (b.x, b.y)
+            already_remembered = any(
+                abs(mem[0] - bush_pos[0]) < 5 and abs(mem[1] - bush_pos[1]) < 5
+                for mem in a.food_memory
+            )
+            if not already_remembered:
+                a.food_memory.append((b.x, b.y, pygame.time.get_ticks()))
 
-        # hungry & can interact -> try eat ONE food dot
-        if a.interact_cooldown <= 0.0 and a.hunger >= cfg.THRESHOLDS["HUNGER_SEEK"]:
+        # TRY EAT: only if hungry, cooldown ready, and food exists
+        if a.interact_cooldown <= 0.0 and a.hunger >= cfg.THRESHOLDS["HUNGER_SEEK"] and len(b.food) > 0:
             ate = res.pick_food_from_bush(b)
-
             if ate:
                 a.hunger = max(0.0, a.hunger - cfg.RESOURCES["EAT_AMOUNT"])
                 if "ENERGY_FROM_EAT" in cfg.RESOURCES:
                     a.energy = min(100.0, a.energy +
                                    cfg.RESOURCES["ENERGY_FROM_EAT"])
-
                 a.eat_pause = cfg.RESOURCES["EAT_PAUSE"]
                 a.interact_cooldown = INTERACT_COOLDOWN
+                a.has_eaten = True
+
+                # If first successful eat+drink cycle, set home location
+                if a.has_drunk and a.home_pos is None:
+                    home_x = (b.x + a.last_water_pos[0]) / 2.0
+                    home_y = (b.y + a.last_water_pos[1]) / 2.0
+                    a.home_pos = (home_x, home_y)
+
                 _nudge_velocity(a)
                 _clamp_speed(a)
-                return True  # pause handled next frames
-
-            # no food -> bounce away (prevents sticking)
-            hit = res.collide_with_bush(nx, ny, cfg.AGENT_RADIUS, b)
-            if hit is not None:
-                _apply_bounce(a, hit)
-
-                # IMPORTANT: if wandering, pick a new waypoint
-                if a.action == "WANDER":
-                    a.waypoint = _random_waypoint_avoiding_resources(
-                        pond, bushes)
-                    a.waypoint_timer = 0.0
                 return True
 
-        # on cooldown -> solid bounce
+        # ALWAYS BOUNCE (prevent camping)
+        # NOTE: set cooldown and force waypoint to prevent re-engagement with empty bushes
         hit = res.collide_with_bush(nx, ny, cfg.AGENT_RADIUS, b)
         if hit is not None:
             _apply_bounce(a, hit)
 
-            if a.action == "WANDER":
+            # If bush is empty: force them away with a longer cooldown
+            if len(b.food) == 0:
+                # Long cooldown to force them to wander away
+                a.interact_cooldown = max(a.interact_cooldown, 2.0)
                 a.waypoint = _random_waypoint_avoiding_resources(pond, bushes)
                 a.waypoint_timer = 0.0
+            elif a.hunger >= cfg.THRESHOLDS["HUNGER_SEEK"] and len(b.food) == 0:
+                # Tried to eat but no food - set cooldown to avoid spam
+                a.interact_cooldown = max(
+                    a.interact_cooldown, INTERACT_COOLDOWN)
+                a.waypoint = _random_waypoint_avoiding_resources(pond, bushes)
+                a.waypoint_timer = 0.0
+            else:
+                # Bush has food - short cooldown for natural spacing
+                a.waypoint = _random_waypoint_avoiding_resources(pond, bushes)
+                a.waypoint_timer = 0.0
+
             return True
 
     # ---------------------------------------------------------
@@ -223,12 +276,55 @@ def _choose_target(a: ag.Agent, pond: res.Pond, bushes: list[res.FoodBush]):
     if bushes:
         food_visible = _nearest_food_in_vision(a, bushes, vision)
 
-    # Both thirsty and hungry: prioritize by motivation level
+    # Clean expired memories before using them
+    _clean_food_memory(a)
+    _clean_water_memory(a)
+
+    # Check discovery status
+    has_food_memory = len(getattr(a, "food_memory", [])) > 0
+    has_water_memory = getattr(a, "last_water_pos", None) is not None
+
+    # ===== DISCOVERY PHASE =====
+    # Must find BOTH resources before normal behavior
+    if not has_water_memory:
+        # Haven't found water yet - go to pond
+        if pond_visible:
+            return (pcx, pcy)
+        # Otherwise wander
+
+    if not has_food_memory:
+        # Haven't found food yet - go to any visible bush
+        if bushes:
+            # Target nearest bush (even if empty, just to discover)
+            nearest_bush = min(bushes, key=lambda b: _dist(a.x, a.y, b.x, b.y))
+            return (nearest_bush.x, nearest_bush.y)
+        # Otherwise wander
+
+    # ===== NORMAL PHASE (both resources discovered) =====
     thirsty = a.thirst >= cfg.THRESHOLDS["THIRST_SEEK"]
     hungry = a.hunger >= cfg.THRESHOLDS["HUNGER_SEEK"]
 
+    # If home region established and not urgent, prefer wandering near home
+    if a.home_pos is not None and not thirsty and not hungry:
+        # Comfortable state - stay near home region
+        dist_to_home = _dist(a.x, a.y, a.home_pos[0], a.home_pos[1])
+        if dist_to_home > a.home_region_radius:
+            # Outside home region - generate waypoint within home region
+            return _random_waypoint_in_home_region(a.home_pos[0], a.home_pos[1],
+                                                   a.home_region_radius, pond, bushes)
+        else:
+            # Inside home region - wander normally (return None lets normal wandering happen)
+            return None
+
+    # PRIORITY: If extremely thirsty, ALWAYS go to water (don't camp at bushes)
+    if a.thirst > 80:  # Critical thirst
+        if pond_visible:
+            return (pcx, pcy)
+        elif a.last_water_pos:
+            return a.last_water_pos
+
+    # If both needs active: prioritize by urgency
     if thirsty and hungry:
-        # Both needs active: go for whichever is MORE urgent
         if a.thirst >= a.hunger:
             if pond_visible:
                 return (pcx, pcy)
@@ -239,14 +335,41 @@ def _choose_target(a: ag.Agent, pond: res.Pond, bushes: list[res.FoodBush]):
                 return food_visible
             elif pond_visible:
                 return (pcx, pcy)
+
+    # Only thirsty
     elif thirsty:
-        # Only thirsty
         if pond_visible:
             return (pcx, pcy)
+        # Use memory
+        if a.last_water_pos:
+            return a.last_water_pos
+
+    # Only hungry
     elif hungry:
-        # Only hungry
         if food_visible is not None:
             return food_visible
+        # Use memory: prioritize bush nearest to water, but only target bushes with food
+        food_memory = getattr(a, "food_memory", [])
+        if food_memory and a.last_water_pos:
+            water_x, water_y = a.last_water_pos
+            # Sort by distance to water, then pick best one with food
+            sorted_bushes = sorted(food_memory,
+                                   key=lambda pos: _dist(pos[0], pos[1], water_x, water_y))
+            # Find first bush that has food
+            for bx, by, _ in sorted_bushes:
+                # Check if any bush at this location has food
+                for b in bushes:
+                    if abs(b.x - bx) < 15 and abs(b.y - by) < 15 and len(b.food) > 0:
+                        return (bx, by)
+            # If no bush in memory has food, just wander
+            return None
+        elif food_memory:
+            # No water memory but have food memory - target nearest with food
+            for bx, by, _ in food_memory:
+                for b in bushes:
+                    if abs(b.x - bx) < 15 and abs(b.y - by) < 15 and len(b.food) > 0:
+                        return (bx, by)
+            return None
 
     return None
 
@@ -331,6 +454,49 @@ def _wander_steer(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodB
     a.velocityY += random.uniform(-j, j) * 0.05
 
 
+def _random_waypoint_in_home_region(home_x: float, home_y: float,
+                                    region_radius: float,
+                                    pond: res.Pond, bushes: list[res.FoodBush]):
+    """Generate a random waypoint within the home region."""
+    avoid_pad = 60.0
+
+    for _ in range(100):
+        # Random point within home region
+        angle = random.uniform(0, 6.28318)
+        distance = random.uniform(0, region_radius)
+        x = home_x + math.cos(angle) * distance
+        y = home_y + math.sin(angle) * distance
+
+        # Clamp to screen bounds
+        m = cfg.SENSING["WAYPOINT_MARGIN"]
+        x = max(m, min(cfg.WIDTH - m, x))
+        y = max(m, min(cfg.HEIGHT - m, y))
+
+        # avoid pond blobs
+        bad = False
+        for (cx, cy, cr) in pond.circles:
+            if _dist(x, y, cx, cy) < (cr + avoid_pad):
+                bad = True
+                break
+        if bad:
+            continue
+
+        # avoid bush blobs
+        for b in bushes:
+            for (cx, cy, cr) in b.blob_circles:
+                if _dist(x, y, cx, cy) < (cr + avoid_pad):
+                    bad = True
+                    break
+            if bad:
+                break
+
+        if not bad:
+            return (x, y)
+
+    # Fallback: just return home center if can't find valid waypoint
+    return (home_x, home_y)
+
+
 def _random_waypoint_avoiding_resources(pond: res.Pond, bushes: list[res.FoodBush]):
     m = cfg.SENSING["WAYPOINT_MARGIN"]
     avoid_pad = 60.0  # how far away from pond/bush blobs the waypoint must be
@@ -382,10 +548,15 @@ def _apply_bounce(a: ag.Agent, hit_tuple) -> None:
         # Calculate unit vector pointing away from collision center
         away_x = (a.x - cx) / dist
         away_y = (a.y - cy) / dist
-        # Push velocity in the away direction
-        push_strength = 3.0
+        # Push velocity in the away direction with stronger force
+        push_strength = 6.0  # Increased from 3.0
         a.velocityX += away_x * push_strength
         a.velocityY += away_y * push_strength
+    else:
+        # Agent is at collision center - pick random direction away
+        angle = random.uniform(0, 6.28318)
+        a.velocityX = math.cos(angle) * 6.0
+        a.velocityY = math.sin(angle) * 6.0
 
     _clamp_speed(a)
     _safe_pos(a)

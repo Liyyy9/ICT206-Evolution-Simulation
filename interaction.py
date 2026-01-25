@@ -112,8 +112,8 @@ def get_agent_state_value(agent: ag.Agent) -> tuple[str | None, str]:
 
 def draw_agent_state_box(screen: pygame.Surface, agent: ag.Agent) -> None:
     """
-    Draw a chatbox-style indicator above the agent showing their state.
-    Displays icon + value or "OK" text.
+    Draw a chatbox-style indicator above the agent showing their state,
+    with additional info: food memory, water location, and age.
     """
     # Get state-based color
     box_color = get_agent_state_color(agent)
@@ -124,57 +124,115 @@ def draw_agent_state_box(screen: pygame.Surface, agent: ag.Agent) -> None:
     if icon_key:
         icon_img = _load_icon(icon_key)
 
+    # Build text lines for the info box
+    lines = []
+
+    # Top line: state icon + value (already handled by icon_img and value_text)
+    # Will render this separately as icon + text
+
+    # Food memory section
+    lines.append("Food:")
+    if hasattr(agent, 'food_memory') and agent.food_memory:
+        # Filter non-expired memories
+        current_time_ms = pygame.time.get_ticks()
+        timeout_ms = cfg.MEMORY["TIMEOUT"] * 1000
+        valid_memories = [
+            (x, y, ts) for x, y, ts in agent.food_memory
+            if (current_time_ms - ts) <= timeout_ms
+        ]
+        for x, y, _ in valid_memories[:3]:
+            lines.append(f"  {int(x)}, {int(y)}")
+        if not valid_memories:
+            lines.append("  --")
+    else:
+        lines.append("  --")
+
+    # Water memory section
+    if agent.last_water_pos:
+        # Check if water memory is expired
+        current_time_ms = pygame.time.get_ticks()
+        timeout_ms = cfg.MEMORY["TIMEOUT"] * 1000
+        if hasattr(agent, 'last_water_time_ms') and agent.last_water_time_ms >= 0:
+            if (current_time_ms - agent.last_water_time_ms) <= timeout_ms:
+                wx, wy = agent.last_water_pos
+                lines.append(f"Water: {int(wx)}, {int(wy)}")
+            else:
+                lines.append("Water: --")
+        else:
+            wx, wy = agent.last_water_pos
+            lines.append(f"Water: {int(wx)}, {int(wy)}")
+    else:
+        lines.append("Water: --")
+
+    # Age section
+    lines.append(f"Age: {int(agent.age)}")
+
+    # Render all info lines with larger font
+    font_info = pygame.font.Font(None, 16)
+    rendered_lines = [font_info.render(
+        line, True, (0, 0, 0)) for line in lines]
+
     # Calculate box size
     padding_x = 8
     padding_y = 6
     icon_size = 24
-    text_height = 10
     gap = 6
 
-    if icon_img and value_text != "OK":
-        # Icon + value layout
-        box_width = icon_size + gap + 30 + padding_x * 2  # icon + gap + value + padding
-        box_height = max(icon_size, text_height) + padding_y * 2
-    else:
-        # Text-only layout ("OK")
-        font = pygame.font.Font(None, 20)
-        text_surface = font.render(value_text, True, (0, 0, 0))
-        box_width = text_surface.get_width() + padding_x * 2
-        box_height = text_surface.get_height() + padding_y * 2
+    # Top row height (icon + value)
+    top_height = max(icon_size, 18)
+
+    # Info lines height
+    info_height = sum(line.get_height()
+                      for line in rendered_lines) + (len(rendered_lines) - 1) * 2
+
+    # Total dimensions
+    info_width = max(line.get_width()
+                     for line in rendered_lines) if rendered_lines else 0
+    box_width = max(icon_size + gap + 30, info_width) + padding_x * 2
+    box_height = top_height + 8 + info_height + padding_y * 2
 
     box_x = int(agent.x) - box_width // 2
-    box_y = int(agent.y) - cfg.AGENT_RADIUS - 50
+    box_y = int(agent.y) - cfg.AGENT_RADIUS - box_height - 15
 
     # Draw rounded box
     box_rect = pygame.Rect(box_x, box_y, box_width, box_height)
     pygame.draw.rect(screen, box_color, box_rect, border_radius=4)
     pygame.draw.rect(screen, (0, 0, 0), box_rect, 2, border_radius=4)  # Border
 
-    # Draw content
+    # Draw top row (icon + value)
+    current_y = box_y + padding_y
+
     if icon_img and value_text != "OK":
         # Draw icon (scaled to icon_size)
         scaled_icon = pygame.transform.scale(icon_img, (icon_size, icon_size))
         icon_x = box_x + padding_x
-        icon_y = box_y + (box_height - icon_size) // 2
+        icon_y = current_y + (top_height - icon_size) // 2
         screen.blit(scaled_icon, (icon_x, icon_y))
 
-        # Draw value (vertically centered)
-        font = pygame.font.Font(None, 20)
-        text_surface = font.render(value_text, True, (0, 0, 0))
+        # Draw value
+        font_value = pygame.font.Font(None, 18)
+        text_surface = font_value.render(value_text, True, (0, 0, 0))
         text_x = icon_x + icon_size + gap
-        text_y = box_y + (box_height - text_height) // 2
+        text_y = current_y + (top_height - text_surface.get_height()) // 2
         screen.blit(text_surface, (text_x, text_y))
     else:
-        # Draw "OK" text centered
-        font = pygame.font.Font(None, 20)
-        text_surface = font.render(value_text, True, (0, 0, 0))
+        # Draw "OK" text
+        font_value = pygame.font.Font(None, 18)
+        text_surface = font_value.render(value_text, True, (0, 0, 0))
         text_x = box_x + padding_x
-        text_y = box_y + padding_y
+        text_y = current_y
         screen.blit(text_surface, (text_x, text_y))
+
+    # Draw info lines
+    current_y += top_height + 8
+    for line_surface in rendered_lines:
+        text_x = box_x + padding_x
+        screen.blit(line_surface, (text_x, current_y))
+        current_y += line_surface.get_height() + 2
 
     # Draw small arrow pointing to agent (chatbox tail)
     arrow_x = int(agent.x)
-    arrow_y = int(agent.y) - cfg.AGENT_RADIUS - 12
+    arrow_y = int(agent.y) - cfg.AGENT_RADIUS - 8
     pygame.draw.polygon(
         screen,
         box_color,

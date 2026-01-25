@@ -11,11 +11,30 @@ def clamp(v: float, lo: float, hi: float) -> float:
 
 
 def _random_alive_colour() -> Colour:
-    return (
-        random.randint(90, 230),
-        random.randint(90, 230),
-        random.randint(90, 230)
-    )
+    """Generate bright neon-like colors with greater variation."""
+    mode = random.randint(0, 2)
+
+    if mode == 0:  # Single bright channel (red, green, blue)
+        channels = [
+            random.randint(180, 255),
+            random.randint(0, 60),
+            random.randint(0, 60)
+        ]
+    elif mode == 1:  # Two bright channels (cyan, magenta, yellow)
+        channels = [
+            random.randint(140, 255),
+            random.randint(140, 255),
+            random.randint(0, 60)
+        ]
+    else:  # Mix with variable intensity
+        channels = [
+            random.randint(120, 255),
+            random.randint(0, 140),
+            random.randint(0, 140)
+        ]
+
+    random.shuffle(channels)
+    return tuple(channels)  # type: ignore
 
 
 @dataclass
@@ -43,6 +62,17 @@ class Agent:
 
     interact_cooldown: float = 0.0
 
+    # memory
+    food_memory: list = None  # List of (x, y, timestamp) tuples
+    last_water_pos: Optional[Tuple[float, float]] = None
+    last_water_time_ms: int = -1
+
+    # home region (after first eat+drink cycle)
+    has_eaten: bool = False
+    has_drunk: bool = False
+    home_pos: Optional[Tuple[float, float]] = None
+    home_region_radius: float = 200.0
+
     # vision
     vision_radius: float = 220.0
     steer_strength: float = 0.18
@@ -58,7 +88,8 @@ def create_agent(agent_id: int, width: int, height: int, radius: int) -> Agent:
         y=float(random.randint(radius, height - radius)),
         velocityX=float(random.choice([-2, -1, 1, 2])),
         velocityY=float(random.choice([-2, -1, 1, 2])),
-        colour=_random_alive_colour()
+        colour=_random_alive_colour(),
+        food_memory=[]
     )
 
     a.vision_radius = cfg.SENSING["VISION_RADIUS"]

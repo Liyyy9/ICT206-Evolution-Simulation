@@ -81,7 +81,7 @@ RESOURCES = {
     "POND_RADIUS_MAX": 80,
 
     # bushes + food dots
-    "NUM_BUSHES": 2,
+    "NUM_BUSHES": 1,
     "BUSH_BLOB_CIRCLES": 3,
     "BUSH_BLOB_RADIUS_MIN": 26,
     "BUSH_BLOB_RADIUS_MAX": 42,
@@ -95,7 +95,7 @@ RESOURCES = {
     "FOOD_EDGE_MARGIN": 8,
     "FOOD_MIN_GAP": 10,
     "FOOD_SPAWN_ATTEMPTS": 200,
-    "FOOD_REGEN_SECONDS": 5.0,
+    "FOOD_REGEN_SECONDS": 10.0,
 
     # Pond
     "POND_SPARKLES": 25,
@@ -122,4 +122,8 @@ SENSING = {
     "WAYPOINT_MARGIN": 120.0,      # keeps targets away from edges
     "WAYPOINT_REACHED": 35.0,      # how close before picking a new target
     "WAYPOINT_TIMEOUT": 4.0,       # seconds before forcing a new waypoint
+}
+
+MEMORY = {
+    "TIMEOUT": 20.0,  # seconds before memory expires
 }
