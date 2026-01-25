@@ -2,6 +2,7 @@ import random
 from dataclasses import dataclass
 from typing import Tuple, Optional
 import config as cfg
+import traits as tr
 
 Colour = Tuple[int, int, int]
 
@@ -62,6 +63,9 @@ class Agent:
 
     interact_cooldown: float = 0.0
 
+    # traits (multipliers applied to base config values)
+    traits: Optional[tr.Traits] = None
+
     # memory
     food_memory: Optional[list] = None  # List of (x, y, timestamp) tuples
     last_water_pos: Optional[Tuple[float, float]] = None
@@ -89,7 +93,8 @@ def create_agent(agent_id: int, width: int, height: int, radius: int) -> Agent:
         velocityX=float(random.choice([-2, -1, 1, 2])),
         velocityY=float(random.choice([-2, -1, 1, 2])),
         colour=_random_alive_colour(),
-        food_memory=[]
+        food_memory=[],
+        traits=tr.random_traits()  # Randomize traits at spawn
     )
 
     a.vision_radius = cfg.SENSING["VISION_RADIUS"]
@@ -117,10 +122,13 @@ def update_internal_state(a: Agent, dt: float) -> None:
 
     a.age += dt
 
-    # Change over time (dt-based)
-    a.hunger += cfg.RATES["HUNGER_UP"] * dt
-    a.thirst += cfg.RATES["THIRST_UP"] * dt
-    a.energy -= cfg.RATES["ENERGY_DOWN"] * dt
+    # Get traits for metabolism scaling
+    traits_obj = getattr(a, "traits", None) or tr.Traits()
+
+    # Change over time (dt-based) - apply metabolism multiplier
+    a.hunger += tr.effective_drain(cfg.RATES["HUNGER_UP"], traits_obj) * dt
+    a.thirst += tr.effective_drain(cfg.RATES["THIRST_UP"], traits_obj) * dt
+    a.energy -= tr.effective_drain(cfg.RATES["ENERGY_DOWN"], traits_obj) * dt
 
     # Clamp core stats
     a.hunger = clamp(a.hunger, 0.0, 100.0)

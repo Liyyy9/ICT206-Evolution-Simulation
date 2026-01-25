@@ -5,6 +5,7 @@ import pygame
 import config as cfg
 import resources as res
 import agent as ag
+import traits as tr
 
 # ---------------------------------------------------------
 # Stability / feel tuning
@@ -14,30 +15,37 @@ MAX_SPEED = 3.5             # clamp velocity so it can't explode
 BOUNCE_DAMP = 0.92          # damp bounce so energy doesn't grow
 
 
-def _is_memory_expired(timestamp_ms: int) -> bool:
-    """Check if a memory entry is older than MEMORY_TIMEOUT."""
+def _is_memory_expired(timestamp_ms: int, agent_traits: tr.Traits = None) -> bool:
+    """Check if a memory entry is older than MEMORY_TIMEOUT (adjusted by traits)."""
     if timestamp_ms < 0:
         return True
+
+    traits_obj = agent_traits or tr.Traits()
+    base_timeout = cfg.MEMORY["TIMEOUT"]
+    effective_timeout = tr.effective_memory_ttl(base_timeout, traits_obj)
+    timeout_ms = effective_timeout * 1000
+
     current_time_ms = pygame.time.get_ticks()
-    timeout_ms = cfg.MEMORY["TIMEOUT"] * 1000
     return (current_time_ms - timestamp_ms) > timeout_ms
 
 
 def _clean_food_memory(a: ag.Agent) -> None:
-    """Remove expired food memories."""
+    """Remove expired food memories (adjusted by agent traits)."""
     if not hasattr(a, "food_memory") or not a.food_memory:
         return
+    traits_obj = getattr(a, "traits", None) or tr.Traits()
     a.food_memory = [
         (x, y, ts) for x, y, ts in a.food_memory
-        if not _is_memory_expired(ts)
+        if not _is_memory_expired(ts, traits_obj)
     ]
 
 
 def _clean_water_memory(a: ag.Agent) -> None:
-    """Clear water memory if expired."""
+    """Clear water memory if expired (adjusted by agent traits)."""
     if not hasattr(a, "last_water_time_ms"):
         return
-    if _is_memory_expired(a.last_water_time_ms):
+    traits_obj = getattr(a, "traits", None) or tr.Traits()
+    if _is_memory_expired(a.last_water_time_ms, traits_obj):
         a.last_water_pos = None
         a.last_water_time_ms = -1
 
@@ -266,7 +274,9 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
 # =========================================================
 
 def _choose_target(a: ag.Agent, pond: res.Pond, bushes: list[res.FoodBush]):
-    vision = getattr(a, "vision_radius", cfg.SENSING["VISION_RADIUS"])
+    base_vision = getattr(a, "vision_radius", cfg.SENSING["VISION_RADIUS"])
+    traits_obj = getattr(a, "traits", None) or tr.Traits()
+    vision = tr.effective_vision(base_vision, traits_obj)
 
     # Check what's available in vision
     pond_visible = False
@@ -582,8 +592,12 @@ def _clamp_speed(a: ag.Agent) -> None:
         a.velocityY = random.choice([-1.0, 1.0])
         return
 
-    if speed > MAX_SPEED:
-        s = MAX_SPEED / speed
+    # Apply speed trait multiplier
+    traits_obj = getattr(a, "traits", None) or tr.Traits()
+    max_speed = tr.effective_max_speed(MAX_SPEED, traits_obj)
+
+    if speed > max_speed:
+        s = max_speed / speed
         a.velocityX *= s
         a.velocityY *= s
 

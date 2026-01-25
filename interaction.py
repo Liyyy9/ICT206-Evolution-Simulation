@@ -5,6 +5,7 @@ Handles agent state display via chatbox-style tooltips.
 import pygame
 import config as cfg
 import agent as ag
+import traits as tr
 
 # Cache loaded icon images
 _icon_cache = {}
@@ -133,9 +134,12 @@ def draw_agent_state_box(screen: pygame.Surface, agent: ag.Agent) -> None:
     # Food memory section
     lines.append("Food:")
     if hasattr(agent, 'food_memory') and agent.food_memory:
-        # Filter non-expired memories
+        # Filter non-expired memories (adjusted by agent traits)
+        traits_obj = getattr(agent, "traits", None) or tr.Traits()
+        effective_timeout = tr.effective_memory_ttl(
+            cfg.MEMORY["TIMEOUT"], traits_obj)
+        timeout_ms = effective_timeout * 1000
         current_time_ms = pygame.time.get_ticks()
-        timeout_ms = cfg.MEMORY["TIMEOUT"] * 1000
         valid_memories = [
             (x, y, ts) for x, y, ts in agent.food_memory
             if (current_time_ms - ts) <= timeout_ms
@@ -149,9 +153,12 @@ def draw_agent_state_box(screen: pygame.Surface, agent: ag.Agent) -> None:
 
     # Water memory section
     if agent.last_water_pos:
-        # Check if water memory is expired
+        # Check if water memory is expired (adjusted by agent traits)
+        traits_obj = getattr(agent, "traits", None) or tr.Traits()
+        effective_timeout = tr.effective_memory_ttl(
+            cfg.MEMORY["TIMEOUT"], traits_obj)
+        timeout_ms = effective_timeout * 1000
         current_time_ms = pygame.time.get_ticks()
-        timeout_ms = cfg.MEMORY["TIMEOUT"] * 1000
         if hasattr(agent, 'last_water_time_ms') and agent.last_water_time_ms >= 0:
             if (current_time_ms - agent.last_water_time_ms) <= timeout_ms:
                 wx, wy = agent.last_water_pos
@@ -244,3 +251,69 @@ def draw_agent_state_box(screen: pygame.Surface, agent: ag.Agent) -> None:
         [(arrow_x - 4, arrow_y), (arrow_x + 4, arrow_y), (arrow_x, arrow_y + 6)],
         1
     )
+
+
+def draw_agent_debug_panel(screen: pygame.Surface, agent: ag.Agent) -> None:
+    """
+    Draw debug panel in top-right showing agent effective trait values.
+    Shows the actual values the agent uses (after trait multipliers applied).
+    Format:
+    Vision: x.xx px
+    Speed: x.xx
+    Metabolism: x.xx
+    Memory: x.xx s
+    """
+    traits_obj = getattr(agent, "traits", None)
+    if traits_obj is None:
+        return
+
+    # Calculate effective values
+    effective_vision = tr.effective_vision(
+        cfg.SENSING["VISION_RADIUS"], traits_obj)
+    effective_speed = tr.effective_max_speed(
+        3.5, traits_obj)  # MAX_SPEED constant
+    # For metabolism, show average of the three drain rates
+    avg_metabolism = (
+        tr.effective_drain(cfg.RATES["HUNGER_UP"], traits_obj) +
+        tr.effective_drain(cfg.RATES["THIRST_UP"], traits_obj) +
+        tr.effective_drain(cfg.RATES["ENERGY_DOWN"], traits_obj)
+    ) / 3.0
+    effective_memory_ttl = tr.effective_memory_ttl(
+        cfg.MEMORY["TIMEOUT"], traits_obj)
+
+    # Create debug lines
+    lines = [
+        f"Vision: {effective_vision:.1f} px",
+        f"Speed: {effective_speed:.2f}",
+        f"Metabolism: {avg_metabolism:.3f}",
+        f"Memory: {effective_memory_ttl:.1f} s",
+    ]
+
+    # Render text lines
+    font = pygame.font.Font(None, 14)
+    rendered_lines = [font.render(line, True, (255, 255, 255))
+                      for line in lines]
+
+    # Calculate panel size
+    padding = 8
+    max_width = max(line.get_width() for line in rendered_lines)
+    total_height = sum(line.get_height()
+                       for line in rendered_lines) + (len(rendered_lines) - 1) * 2
+
+    panel_width = max_width + padding * 2
+    panel_height = total_height + padding * 2
+
+    # Position in top-right
+    panel_x = cfg.WIDTH - panel_width - 10
+    panel_y = 10
+
+    # Draw panel background
+    panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
+    pygame.draw.rect(screen, (0, 0, 0), panel_rect)  # Black background
+    pygame.draw.rect(screen, (100, 255, 100), panel_rect, 2)  # Green border
+
+    # Draw text lines
+    current_y = panel_y + padding
+    for line_surface in rendered_lines:
+        screen.blit(line_surface, (panel_x + padding, current_y))
+        current_y += line_surface.get_height() + 2

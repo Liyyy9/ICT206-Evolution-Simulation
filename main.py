@@ -80,6 +80,10 @@ while running:
     elif followed_agent is not None:
         interaction.draw_agent_state_box(screen, followed_agent)
 
+    # Show debug traits panel for followed agent
+    if followed_agent is not None:
+        interaction.draw_agent_debug_panel(screen, followed_agent)
+
     pygame.display.flip()
 
 pygame.quit()
