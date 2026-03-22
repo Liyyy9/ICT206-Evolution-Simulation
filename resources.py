@@ -327,12 +327,15 @@ def draw_resources(screen: pygame.Surface, pond: Pond, bushes: List[FoodBush]) -
 def _closest_collision_circle(x: float, y: float, radius: float, circles):
     best = None
     best_overlap = 0.0
+    # Very small to avoid V-junction jitter but allow normal contact
+    min_overlap_threshold = 0.1
     for (cx, cy, cr) in circles:
         dx = x - cx
         dy = y - cy
         dist = math.hypot(dx, dy)
         overlap = (radius + cr) - dist
-        if overlap > best_overlap:
+        # Only consider collisions with meaningful overlap
+        if overlap > min_overlap_threshold and overlap > best_overlap:
             best_overlap = overlap
             best = (cx, cy, cr, dist, overlap)
     return best

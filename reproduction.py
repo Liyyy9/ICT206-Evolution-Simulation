@@ -90,12 +90,12 @@ def attempt_reproduction(
     parent_a: ag.Agent,
     parent_b: ag.Agent,
     cfg_obj=None
-) -> Optional[ag.Agent]:
+) -> list[ag.Agent]:
     """
     Attempt reproduction between two agents.
     Success is probabilistic (REPRODUCTION_PROBABILITY).
-    On success, returns the new child agent.
-    On failure, returns None.
+    On success, returns list of newborn children (can be multiple for twins, etc.).
+    On failure, returns empty list.
     """
     if cfg_obj is None:
         cfg_obj = cfg
@@ -103,13 +103,16 @@ def attempt_reproduction(
     prob = cfg_obj.REPRODUCTION.get("REPRODUCTION_PROBABILITY", 0.7)
 
     if random.random() > prob:
-        return None  # Reproduction attempt failed
+        return []  # Reproduction attempt failed
 
-    # Success: create child
-    child = make_child(parent_a, parent_b)
+    # Success: create children (random number within min-max range)
+    min_offspring = cfg_obj.REPRODUCTION.get("OFFSPRING_MIN", 1)
+    max_offspring = cfg_obj.REPRODUCTION.get("OFFSPRING_MAX", 4)
+    num_offspring = random.randint(min_offspring, max_offspring)
+    children = [make_child(parent_a, parent_b) for _ in range(num_offspring)]
 
-    # Apply cooldown to both parents
-    cooldown = cfg_obj.REPRODUCTION.get("REPRO_COOLDOWN", 15.0)
+    # Apply SHORT cooldown to both parents (prevents immediate re-mating with same partner)
+    cooldown = cfg_obj.REPRODUCTION.get("REPRO_COOLDOWN", 3.0)
     parent_a.repro_cooldown = cooldown
     parent_b.repro_cooldown = cooldown
 
@@ -130,47 +133,59 @@ def attempt_reproduction(
     parent_a.energy = max(0.0, parent_a.energy - energy_cost)
     parent_b.energy = max(0.0, parent_b.energy - energy_cost)
 
-    return child
+    return children
 
 
 def make_child(parent_a: ag.Agent, parent_b: ag.Agent) -> ag.Agent:
     """
-    Create offspring inheriting averaged traits and color from both parents.
-    No mutation yet.
+    Create offspring with DNA mutation inheritance.
+    Each trait is randomly inherited from one parent, then mutated.
     """
     # Get parent traits (with defaults if missing)
     traits_a = getattr(parent_a, "traits", None) or tr.Traits()
     traits_b = getattr(parent_b, "traits", None) or tr.Traits()
 
-    # Average trait multipliers
-    child_vision_mult = (traits_a.vision_mult + traits_b.vision_mult) / 2.0
-    child_speed_mult = (traits_a.speed_mult + traits_b.speed_mult) / 2.0
-    child_metabolism_mult = (traits_a.metabolism_mult +
-                             traits_b.metabolism_mult) / 2.0
-    child_memory_mult = (traits_a.memory_mult + traits_b.memory_mult) / 2.0
+    # Get mutation parameters
+    mutation_rate = cfg.MUTATION.get("MUTATION_RATE", 0.12)
+    mutation_std = cfg.MUTATION.get("MUTATION_STD_DEV", 0.15)
 
-    # Clamp to valid ranges
+    def mutate_trait(trait_value: float, trait_range: Tuple[float, float]) -> float:
+        """Apply Gaussian mutation to a trait value."""
+        if random.random() < mutation_rate:
+            # Apply Gaussian noise
+            mutated = trait_value + random.gauss(0, mutation_std)
+            # Clamp to valid range
+            return tr.clamp_trait(mutated, trait_range)
+        return trait_value
+
+    # Randomly inherit each trait from one parent, then apply mutation
+    child_vision_mult = random.choice(
+        [traits_a.vision_mult, traits_b.vision_mult])
+    child_vision_mult = mutate_trait(child_vision_mult, tr.VISION_MULT_RANGE)
+
+    child_speed_mult = random.choice(
+        [traits_a.speed_mult, traits_b.speed_mult])
+    child_speed_mult = mutate_trait(child_speed_mult, tr.SPEED_MULT_RANGE)
+
+    child_metabolism_mult = random.choice(
+        [traits_a.metabolism_mult, traits_b.metabolism_mult])
+    child_metabolism_mult = mutate_trait(
+        child_metabolism_mult, tr.METABOLISM_MULT_RANGE)
+
+    child_memory_mult = random.choice(
+        [traits_a.memory_mult, traits_b.memory_mult])
+    child_memory_mult = mutate_trait(child_memory_mult, tr.MEMORY_MULT_RANGE)
+
+    # Create child traits with mutated values
     child_traits = tr.Traits(
-        vision_mult=tr.clamp_trait(child_vision_mult, tr.VISION_MULT_RANGE),
-        speed_mult=tr.clamp_trait(child_speed_mult, tr.SPEED_MULT_RANGE),
-        metabolism_mult=tr.clamp_trait(
-            child_metabolism_mult, tr.METABOLISM_MULT_RANGE),
-        memory_mult=tr.clamp_trait(child_memory_mult, tr.MEMORY_MULT_RANGE)
+        vision_mult=child_vision_mult,
+        speed_mult=child_speed_mult,
+        metabolism_mult=child_metabolism_mult,
+        memory_mult=child_memory_mult
     )
 
-    # Average colors (RGB channels)
-    color_a = parent_a.colour
-    color_b = parent_b.colour
-
-    child_r = int((color_a[0] + color_b[0]) / 2.0)
-    child_g = int((color_a[1] + color_b[1]) / 2.0)
-    child_b = int((color_a[2] + color_b[2]) / 2.0)
-
-    child_colour = (
-        max(0, min(255, child_r)),
-        max(0, min(255, child_g)),
-        max(0, min(255, child_b))
-    )
+    # Inherit color from one random parent (no averaging to preserve vibrancy)
+    child_colour = random.choice([parent_a.colour, parent_b.colour])
 
     # Spawn near midpoint of parents with small random offset
     spawn_x = (parent_a.x + parent_b.x) / 2.0

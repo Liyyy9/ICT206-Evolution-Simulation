@@ -34,17 +34,17 @@ FPS = 60
 NUM_AGENTS = 20
 AGENT_RADIUS = 8
 # Based off seconds (set to 180 for 3 minutes, 60 for 1 minute testing)
-MAX_AGE = 90.0
+MAX_AGE = 80.0
 
 # Thresholds
 THRESHOLDS = {
     # Hunger (0...100)
-    "HUNGER_SEEK": 45.0,        # Start looking for food
+    "HUNGER_SEEK": 35.0,        # Start looking for food
     "HUNGER_OK": 10.0,          # Stop eating
     "HUNGER_CRIT": 80.0,
 
     # Thirst (0...100)
-    "THIRST_SEEK": 45.0,        # Start looking for water
+    "THIRST_SEEK": 35.0,        # Start looking for water
     "THIRST_OK": 8.0,           # Stop drinking
     "THIRST_CRIT": 80.0,
 
@@ -61,7 +61,7 @@ THRESHOLDS = {
 # Rates (per second)
 RATES = {
     "HUNGER_UP": 1.5,          # 0->100 in 23s
-    "THIRST_UP": 1.2,          # 0->100 in 21s
+    "THIRST_UP": 1.5,          # 0->100 in 21s
     "ENERGY_DOWN": 0.8,        # 100->40 in 75s
 
     # Health model
@@ -95,7 +95,7 @@ RESOURCES = {
     "FOOD_EDGE_MARGIN": 8,
     "FOOD_MIN_GAP": 10,
     "FOOD_SPAWN_ATTEMPTS": 200,
-    "FOOD_REGEN_SECONDS": 10.0,
+    "FOOD_REGEN_SECONDS": 5.0,
 
     # Pond
     "POND_SPARKLES": 25,
@@ -135,10 +135,19 @@ REPRODUCTION = {
     # px; agents must be within this distance to mate
     "MATE_RADIUS": 50.0,
     # seconds before SEEK_MATE fails and agent returns to wander
-    "MATE_SEEK_TIMEOUT": 5.0,
-    "REPRO_COOLDOWN": 15.0,                  # seconds before parent can mate again
+    "MATE_SEEK_TIMEOUT": 10.0,
+    # seconds before parent can mate again (must be > 0 to prevent runaway loops)
+    "REPRO_COOLDOWN": 3.5,
     # energy drained from each parent on successful reproduction
     "REPRO_ENERGY_COST": 20.0,
     "SPAWN_OFFSET_RANGE": 30.0,              # px; random offset from parent midpoint
     "REPRO_ANIMATION_DURATION": 1.0,         # seconds to show love icon
+    # range of offspring per successful mating (random between min and max, inclusive)
+    "OFFSPRING_MIN": 1,
+    "OFFSPRING_MAX": 3,
+}
+
+MUTATION = {
+    "MUTATION_RATE": 0.12,                   # 12% chance to mutate each trait
+    "MUTATION_STD_DEV": 0.15,                # Gaussian std dev for mutation nudge
 }

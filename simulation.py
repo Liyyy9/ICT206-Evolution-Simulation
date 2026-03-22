@@ -79,12 +79,14 @@ def process_reproduction(agents: list[ag.Agent]) -> list[ag.Agent]:
             continue
 
         # Attempt reproduction
-        child = repro.attempt_reproduction(agent_a, mate)
-        if child is not None:
-            # Assign a new unique ID
+        children = repro.attempt_reproduction(agent_a, mate)
+        if children:
+            # Assign unique IDs to all children
             max_id = max((a.id for a in agents), default=0)
-            child.id = max_id + 1
-            newborns.append(child)
+            for child in children:
+                max_id += 1
+                child.id = max_id
+                newborns.append(child)
 
             # Reset seek state for both parents (will resume if still eligible)
             agent_a.action = "WANDER"

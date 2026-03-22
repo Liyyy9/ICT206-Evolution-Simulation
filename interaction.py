@@ -257,29 +257,43 @@ def draw_agent_state_box(screen: pygame.Surface, agent: ag.Agent) -> None:
     )
 
 
-def draw_population_counter(screen: pygame.Surface, population: int, max_population: int) -> None:
+def draw_population_counter(screen: pygame.Surface, population: int, max_population: int, max_generation: int = 1) -> None:
     """
-    Draw population counter at top-right corner, above the debug box.
+    Draw population counter and max generation at top-right corner.
     Format: 20 / 20 (large font)
+    Generation: 3 (smaller font below)
     """
-    font = pygame.font.Font(None, 48)
-    text = f"{population} / {max_population}"
-    text_surface = font.render(text, True, (255, 255, 255))
+    font_large = pygame.font.Font(None, 48)
+    font_small = pygame.font.Font(None, 32)
 
-    # Position at top-right with padding, above where debug box will be
-    x = cfg.WIDTH - text_surface.get_width() - 15
+    text_pop = f"{population} / {max_population}"
+    text_gen = f"Gen: {max_generation}"
+
+    text_pop_surface = font_large.render(text_pop, True, (255, 255, 255))
+    text_gen_surface = font_small.render(text_gen, True, (200, 200, 200))
+
+    # Position at top-right with padding
+    x = cfg.WIDTH - max(text_pop_surface.get_width(),
+                        text_gen_surface.get_width()) - 15
     y = 10
 
+    # Calculate background height for both lines
+    total_height = text_pop_surface.get_height() + text_gen_surface.get_height() + 15
+    bg_width = max(text_pop_surface.get_width(),
+                   text_gen_surface.get_width()) + 10
+
     # Draw semi-transparent background
-    bg_rect = pygame.Rect(
-        x - 5, y - 5, text_surface.get_width() + 10, text_surface.get_height() + 10)
+    bg_rect = pygame.Rect(x - 5, y - 5, bg_width, total_height)
     bg_surface = pygame.Surface((bg_rect.width, bg_rect.height))
     bg_surface.set_alpha(180)
     bg_surface.fill((0, 0, 0))
     screen.blit(bg_surface, (bg_rect.x, bg_rect.y))
 
-    # Draw text
-    screen.blit(text_surface, (x, y))
+    # Draw population text
+    screen.blit(text_pop_surface, (x, y))
+
+    # Draw generation text beneath
+    screen.blit(text_gen_surface, (x, y + text_pop_surface.get_height() + 5))
 
 
 def draw_reproduction_icon(screen: pygame.Surface, agents: list[ag.Agent]) -> None:
@@ -347,6 +361,7 @@ def draw_agent_debug_panel(screen: pygame.Surface, agent: ag.Agent) -> None:
         f"Speed: {effective_speed:.2f}",
         f"Metabolism: {avg_metabolism:.3f}",
         f"Memory: {effective_memory_ttl:.1f} s",
+        f"Generation: {getattr(agent, 'generation', 1)}",
     ]
 
     # Render text lines
@@ -365,7 +380,7 @@ def draw_agent_debug_panel(screen: pygame.Surface, agent: ag.Agent) -> None:
 
     # Position in top-right (below population counter)
     panel_x = cfg.WIDTH - panel_width - 10
-    panel_y = 70
+    panel_y = 90
 
     # Draw panel background
     panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)

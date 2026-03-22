@@ -71,20 +71,6 @@ while running:
             cfg.AGENT_RADIUS
         )
 
-        # For gen 2+, draw outline rings showing generation
-        if generation >= 2:
-            # Ring radius grows with generation: RADIUS + 2*(gen-1)
-            ring_radius = cfg.AGENT_RADIUS + 2 * (generation - 1)
-            # Cap thickness to avoid clutter
-            thickness = min(2, max(1, (generation - 2) // 2 + 1))
-            pygame.draw.circle(
-                screen,
-                cfg.COLOURS["OUTLINE"],
-                (cx, cy),
-                ring_radius,
-                thickness
-            )
-
     agents = alive
 
     # Handle reproduction: spawn newborns from mating pairs
@@ -95,8 +81,13 @@ while running:
     if len(agents) > max_population:
         max_population = len(agents)
 
+    # Calculate max generation (highest generation alive)
+    max_generation = max((getattr(a, "generation", 1)
+                         for a in agents), default=1)
+
     # Draw population counter (always visible)
-    interaction.draw_population_counter(screen, len(agents), max_population)
+    interaction.draw_population_counter(
+        screen, len(agents), max_population, max_generation)
 
     # Draw love icons above reproducing agents
     interaction.draw_reproduction_icon(screen, agents)
@@ -119,4 +110,3 @@ while running:
     pygame.display.flip()
 
 pygame.quit()
-
