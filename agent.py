@@ -77,6 +77,12 @@ class Agent:
     home_pos: Optional[Tuple[float, float]] = None
     home_region_radius: float = 200.0
 
+    # reproduction
+    mate_seek_timer: float = 0.0              # counts down from MATE_SEEK_TIMEOUT
+    repro_cooldown: float = 0.0               # cooldown after successful reproduction
+    repro_animation_timer: float = 0.0        # shows love icon during reproduction
+    generation: int = 1                       # 1 = gen 1, 2+ = offspring
+
     # vision
     vision_radius: float = 220.0
     steer_strength: float = 0.18

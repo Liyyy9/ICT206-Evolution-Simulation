@@ -7,6 +7,12 @@ from dataclasses import dataclass
 import random
 import math
 
+# Trait multiplier ranges for inheritance/clamping
+VISION_MULT_RANGE = (0.7, 1.4)
+SPEED_MULT_RANGE = (0.7, 1.4)
+METABOLISM_MULT_RANGE = (0.7, 1.3)
+MEMORY_MULT_RANGE = (0.7, 1.5)
+
 
 @dataclass
 class Traits:
@@ -41,6 +47,12 @@ def clamp_traits(traits: Traits) -> Traits:
         metabolism_mult=max(0.5, min(2.0, traits.metabolism_mult)),
         memory_mult=max(0.5, min(2.0, traits.memory_mult))
     )
+
+
+def clamp_trait(value: float, range_tuple: tuple) -> float:
+    """Clamp a single trait value to the specified range (min, max)."""
+    min_val, max_val = range_tuple
+    return max(min_val, min(max_val, value))
 
 
 # =========================================================

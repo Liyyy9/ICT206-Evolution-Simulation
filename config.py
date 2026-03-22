@@ -27,24 +27,24 @@ ICONS = {
 }
 
 # Screen
-WIDTH, HEIGHT = 1280, 720
+WIDTH, HEIGHT = 1280, 800
 FPS = 60
 
 # Agents
 NUM_AGENTS = 20
 AGENT_RADIUS = 8
 # Based off seconds (set to 180 for 3 minutes, 60 for 1 minute testing)
-MAX_AGE = 180.0
+MAX_AGE = 90.0
 
 # Thresholds
 THRESHOLDS = {
     # Hunger (0...100)
-    "HUNGER_SEEK": 35.0,        # Start looking for food
+    "HUNGER_SEEK": 45.0,        # Start looking for food
     "HUNGER_OK": 10.0,          # Stop eating
     "HUNGER_CRIT": 80.0,
 
     # Thirst (0...100)
-    "THIRST_SEEK": 25.0,        # Start looking for water
+    "THIRST_SEEK": 45.0,        # Start looking for water
     "THIRST_OK": 8.0,           # Stop drinking
     "THIRST_CRIT": 80.0,
 
@@ -81,7 +81,7 @@ RESOURCES = {
     "POND_RADIUS_MAX": 80,
 
     # bushes + food dots
-    "NUM_BUSHES": 1,
+    "NUM_BUSHES": 4,
     "BUSH_BLOB_CIRCLES": 3,
     "BUSH_BLOB_RADIUS_MIN": 26,
     "BUSH_BLOB_RADIUS_MAX": 42,
@@ -126,4 +126,19 @@ SENSING = {
 
 MEMORY = {
     "TIMEOUT": 20.0,  # seconds before memory expires
+}
+
+REPRODUCTION = {
+    "MIN_MATE_AGE": 20.0,                    # minimum age before eligible for mating
+    # success rate when two mates are in proximity
+    "REPRODUCTION_PROBABILITY": 0.8,
+    # px; agents must be within this distance to mate
+    "MATE_RADIUS": 50.0,
+    # seconds before SEEK_MATE fails and agent returns to wander
+    "MATE_SEEK_TIMEOUT": 5.0,
+    "REPRO_COOLDOWN": 15.0,                  # seconds before parent can mate again
+    # energy drained from each parent on successful reproduction
+    "REPRO_ENERGY_COST": 20.0,
+    "SPAWN_OFFSET_RANGE": 30.0,              # px; random offset from parent midpoint
+    "REPRO_ANIMATION_DURATION": 1.0,         # seconds to show love icon
 }

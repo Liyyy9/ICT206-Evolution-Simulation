@@ -94,6 +94,10 @@ def get_agent_state_value(agent: ag.Agent) -> tuple[str | None, str]:
     Get icon key and value for agent's current state.
     Returns (icon_key, value_string) or (None, "OK")
     """
+    # Check for SEEK_MATE first
+    if getattr(agent, "action", "WANDER") == "SEEK_MATE":
+        return ("LOVE", "♥")
+
     thirsty = agent.thirst >= cfg.THRESHOLDS["THIRST_SEEK"]
     hungry = agent.hunger >= cfg.THRESHOLDS["HUNGER_SEEK"]
 
@@ -253,6 +257,62 @@ def draw_agent_state_box(screen: pygame.Surface, agent: ag.Agent) -> None:
     )
 
 
+def draw_population_counter(screen: pygame.Surface, population: int, max_population: int) -> None:
+    """
+    Draw population counter at top-right corner, above the debug box.
+    Format: 20 / 20 (large font)
+    """
+    font = pygame.font.Font(None, 48)
+    text = f"{population} / {max_population}"
+    text_surface = font.render(text, True, (255, 255, 255))
+
+    # Position at top-right with padding, above where debug box will be
+    x = cfg.WIDTH - text_surface.get_width() - 15
+    y = 10
+
+    # Draw semi-transparent background
+    bg_rect = pygame.Rect(
+        x - 5, y - 5, text_surface.get_width() + 10, text_surface.get_height() + 10)
+    bg_surface = pygame.Surface((bg_rect.width, bg_rect.height))
+    bg_surface.set_alpha(180)
+    bg_surface.fill((0, 0, 0))
+    screen.blit(bg_surface, (bg_rect.x, bg_rect.y))
+
+    # Draw text
+    screen.blit(text_surface, (x, y))
+
+
+def draw_reproduction_icon(screen: pygame.Surface, agents: list[ag.Agent]) -> None:
+    """
+    Draw love icon above agents during reproduction animation.
+    """
+    love_icon = _load_icon("LOVE")
+    if love_icon is None:
+        return
+
+    for agent in agents:
+        repro_timer = getattr(agent, "repro_animation_timer", 0.0)
+        if repro_timer <= 0.0:
+            continue
+
+        # Scale icon for pulsing effect
+        pulse = (1.0 - (repro_timer /
+                 cfg.REPRODUCTION.get("REPRO_ANIMATION_DURATION", 1.0))) * 0.3
+        scale = 1.0 + pulse
+
+        icon_size = int(24 * scale)
+        try:
+            scaled_icon = pygame.transform.scale(
+                love_icon, (icon_size, icon_size))
+        except:
+            continue
+
+        # Draw above agent
+        icon_x = int(agent.x - icon_size / 2)
+        icon_y = int(agent.y - cfg.AGENT_RADIUS - 35)
+        screen.blit(scaled_icon, (icon_x, icon_y))
+
+
 def draw_agent_debug_panel(screen: pygame.Surface, agent: ag.Agent) -> None:
     """
     Draw debug panel in top-right showing agent effective trait values.
@@ -303,9 +363,9 @@ def draw_agent_debug_panel(screen: pygame.Surface, agent: ag.Agent) -> None:
     panel_width = max_width + padding * 2
     panel_height = total_height + padding * 2
 
-    # Position in top-right
+    # Position in top-right (below population counter)
     panel_x = cfg.WIDTH - panel_width - 10
-    panel_y = 10
+    panel_y = 70
 
     # Draw panel background
     panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)

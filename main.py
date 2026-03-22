@@ -19,6 +19,9 @@ agents = [
 pond = res.create_pond()
 bushes = res.create_bushes(pond)
 
+max_population = len(agents)  # Track max population ever reached
+
+
 running = True
 while running:
     dt = clock.tick(cfg.FPS) / 1000.0
@@ -52,7 +55,9 @@ while running:
             continue
 
         cx, cy = int(a.x), int(a.y)
+        generation = getattr(a, "generation", 1)
 
+        # Draw filled circle
         pygame.draw.circle(
             screen,
             cfg.COLOURS["OUTLINE"],
@@ -66,9 +71,36 @@ while running:
             cfg.AGENT_RADIUS
         )
 
+        # For gen 2+, draw outline rings showing generation
+        if generation >= 2:
+            # Ring radius grows with generation: RADIUS + 2*(gen-1)
+            ring_radius = cfg.AGENT_RADIUS + 2 * (generation - 1)
+            # Cap thickness to avoid clutter
+            thickness = min(2, max(1, (generation - 2) // 2 + 1))
+            pygame.draw.circle(
+                screen,
+                cfg.COLOURS["OUTLINE"],
+                (cx, cy),
+                ring_radius,
+                thickness
+            )
+
     agents = alive
 
-    # Draw state box for hovered agent or followed agent
+    # Handle reproduction: spawn newborns from mating pairs
+    newborns = sim.process_reproduction(agents)
+    agents.extend(newborns)
+
+    # Update max population tracker
+    if len(agents) > max_population:
+        max_population = len(agents)
+
+    # Draw population counter (always visible)
+    interaction.draw_population_counter(screen, len(agents), max_population)
+
+    # Draw love icons above reproducing agents
+    interaction.draw_reproduction_icon(screen, agents)
+
     mouse_pos = pygame.mouse.get_pos()
     hovered_agent = interaction.get_agent_at_mouse(agents, mouse_pos)
     followed_agent = interaction.get_followed_agent(agents)
@@ -87,3 +119,4 @@ while running:
     pygame.display.flip()
 
 pygame.quit()
+

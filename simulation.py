@@ -6,6 +6,7 @@ import config as cfg
 import resources as res
 import agent as ag
 import traits as tr
+import reproduction as repro
 
 # ---------------------------------------------------------
 # Stability / feel tuning
@@ -50,6 +51,50 @@ def _clean_water_memory(a: ag.Agent) -> None:
         a.last_water_time_ms = -1
 
 
+def process_reproduction(agents: list[ag.Agent]) -> list[ag.Agent]:
+    """
+    Handle mating interactions between SEEK_MATE agents.
+    Returns list of newborn children to add to the population.
+    """
+    newborns = []
+    mate_radius = cfg.REPRODUCTION.get("MATE_RADIUS", 50.0)
+
+    # Find all seeking agents
+    seeking = [a for a in agents if getattr(
+        a, "action", "WANDER") == "SEEK_MATE"]
+
+    # Check each seeking agent for nearby mates
+    for agent_a in seeking:
+        # Find closest seeking mate
+        mate = repro.find_closest_mate(agent_a, seeking)
+        if mate is None:
+            continue
+
+        # Check if within mating distance
+        dx = mate.x - agent_a.x
+        dy = mate.y - agent_a.y
+        dist = math.sqrt(dx * dx + dy * dy)
+
+        if dist > mate_radius:
+            continue
+
+        # Attempt reproduction
+        child = repro.attempt_reproduction(agent_a, mate)
+        if child is not None:
+            # Assign a new unique ID
+            max_id = max((a.id for a in agents), default=0)
+            child.id = max_id + 1
+            newborns.append(child)
+
+            # Reset seek state for both parents (will resume if still eligible)
+            agent_a.action = "WANDER"
+            agent_a.mate_seek_timer = 0.0
+            mate.action = "WANDER"
+            mate.mate_seek_timer = 0.0
+
+    return newborns
+
+
 def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBush]) -> bool:
     """
     Update one agent for one frame.
@@ -65,6 +110,39 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
     # timers
     if getattr(a, "interact_cooldown", 0.0) > 0.0:
         a.interact_cooldown = max(0.0, a.interact_cooldown - dt)
+
+    if getattr(a, "repro_cooldown", 0.0) > 0.0:
+        a.repro_cooldown = max(0.0, a.repro_cooldown - dt)
+
+    if getattr(a, "mate_seek_timer", 0.0) > 0.0:
+        a.mate_seek_timer = max(0.0, a.mate_seek_timer - dt)
+
+    if getattr(a, "repro_animation_timer", 0.0) > 0.0:
+        a.repro_animation_timer = max(0.0, a.repro_animation_timer - dt)
+
+    if getattr(a, "eat_pause", 0.0) > 0.0:
+        a.eat_pause = max(0.0, a.eat_pause - dt)
+        return True
+
+    # ---------------------------------------------------------
+    # SEEK_MATE STATE MANAGEMENT
+    # ---------------------------------------------------------
+    current_action = getattr(a, "action", "WANDER")
+
+    # Try to enter SEEK_MATE if eligible
+    if current_action != "SEEK_MATE" and repro.is_eligible_for_mate_seeking(a):
+        a.action = "SEEK_MATE"
+        a.mate_seek_timer = cfg.REPRODUCTION["MATE_SEEK_TIMEOUT"]
+
+    # Abort SEEK_MATE if survival needs are critical
+    if current_action == "SEEK_MATE" and repro.should_abort_mate_seeking(a):
+        a.action = "WANDER"
+        a.mate_seek_timer = 0.0
+
+    # Timeout: SEEK_MATE fails if no mate found in time
+    if current_action == "SEEK_MATE" and a.mate_seek_timer <= 0.0:
+        a.action = "WANDER"
+        a.mate_seek_timer = 0.0
 
     if getattr(a, "eat_pause", 0.0) > 0.0:
         a.eat_pause = max(0.0, a.eat_pause - dt)
@@ -113,13 +191,18 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
     # ---------------------------------------------------------
     # SENSING + STEERING
     # ---------------------------------------------------------
-    target = _choose_target(a, pond, bushes)
-
-    if target is None:
+    # For SEEK_MATE: target is handled in reproduction.py
+    # For now, just wander if seeking (mate-finding is distance-based)
+    if getattr(a, "action", "WANDER") == "SEEK_MATE":
         _wander_steer(a, dt, pond, bushes)
     else:
-        tx, ty = target
-        _steer_towards(a, tx, ty)
+        target = _choose_target(a, pond, bushes)
+
+        if target is None:
+            _wander_steer(a, dt, pond, bushes)
+        else:
+            tx, ty = target
+            _steer_towards(a, tx, ty)
 
     _clamp_speed(a)
 
