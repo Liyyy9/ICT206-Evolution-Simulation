@@ -161,6 +161,17 @@ def update_internal_state(a: Agent, dt: float) -> None:
     if a.energy <= cfg.THRESHOLDS["ENERGY_CRIT"]:
         drain += cfg.RATES["HEALTH_DRAIN_CRIT"]
 
+    # Age-based drain multiplier: young agents have reduced drain, older agents have increased
+    # Age 0-30s: 50% drain (reproductive window)
+    # Age 30-60s: linearly ramp from 50% to 100% drain
+    # Age 60+: 100% drain
+    age_drain_multiplier = 0.5  # Default for young agents
+    if a.age > 30.0:
+        progress = min((a.age - 30.0) / 30.0, 1.0)  # 0 to 1 over 30 seconds
+        age_drain_multiplier = 0.5 + (progress * 0.5)  # Ramp from 0.5 to 1.0
+
+    drain *= age_drain_multiplier
+
     # Small regen if doing okay (not in SEEK zones and energy not low)
     doing_okay = (
         a.hunger < cfg.THRESHOLDS["HUNGER_SEEK"]

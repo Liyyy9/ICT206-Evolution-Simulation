@@ -184,8 +184,9 @@ def make_child(parent_a: ag.Agent, parent_b: ag.Agent) -> ag.Agent:
         memory_mult=child_memory_mult
     )
 
-    # Inherit color from one random parent (no averaging to preserve vibrancy)
-    child_colour = random.choice([parent_a.colour, parent_b.colour])
+    # Randomize color instead of inheriting (genetic diversity in appearance)
+    child_colour = (random.randint(50, 255), random.randint(
+        50, 255), random.randint(50, 255))
 
     # Spawn near midpoint of parents with small random offset
     spawn_x = (parent_a.x + parent_b.x) / 2.0

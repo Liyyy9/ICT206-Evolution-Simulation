@@ -257,6 +257,31 @@ def draw_agent_state_box(screen: pygame.Surface, agent: ag.Agent) -> None:
     )
 
 
+def draw_timer(screen: pygame.Surface, elapsed_time: float) -> None:
+    """
+    Draw elapsed time in top-left corner.
+    Format: 0:23 (minutes:seconds)
+    """
+    font = pygame.font.Font(None, 36)
+    minutes = int(elapsed_time) // 60
+    seconds = int(elapsed_time) % 60
+    time_text = f"{minutes}:{seconds:02d}"
+    text_surface = font.render(time_text, True, (255, 255, 255))
+
+    # Position at top-left with padding
+    x, y = 15, 10
+
+    # Draw semi-transparent background
+    bg_rect = pygame.Rect(
+        x - 5, y - 5, text_surface.get_width() + 10, text_surface.get_height() + 10)
+    bg_surface = pygame.Surface((bg_rect.width, bg_rect.height))
+    bg_surface.set_alpha(180)
+    bg_surface.fill((0, 0, 0))
+    screen.blit(bg_surface, (bg_rect.x, bg_rect.y))
+
+    screen.blit(text_surface, (x, y))
+
+
 def draw_population_counter(screen: pygame.Surface, population: int, max_population: int, max_generation: int = 1) -> None:
     """
     Draw population counter and max generation at top-right corner.
@@ -294,6 +319,296 @@ def draw_population_counter(screen: pygame.Surface, population: int, max_populat
 
     # Draw generation text beneath
     screen.blit(text_gen_surface, (x, y + text_pop_surface.get_height() + 5))
+
+
+def draw_visualization_toggle_button(screen: pygame.Surface, visualization_enabled: bool) -> pygame.Rect:
+    """
+    Draw a toggle button for visualization mode (ON/OFF).
+    Returns the button rect for click detection.
+    Position: bottom-left corner
+    """
+    font = pygame.font.Font(None, 28)
+    status = "VIS: ON" if visualization_enabled else "VIS: OFF"
+    color = (100, 200, 100) if visualization_enabled else (200, 100, 100)
+
+    text_surface = font.render(status, True, (255, 255, 255))
+
+    # Button dimensions
+    padding = 10
+    button_width = text_surface.get_width() + padding * 2
+    button_height = text_surface.get_height() + padding * 2
+
+    # Position at bottom-left
+    button_x = 15
+    button_y = cfg.HEIGHT - button_height - 15
+    button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+
+    # Draw button background
+    pygame.draw.rect(screen, color, button_rect)
+    pygame.draw.rect(screen, (255, 255, 255), button_rect, 2)  # Border
+
+    # Draw text
+    text_x = button_x + padding
+    text_y = button_y + padding
+    screen.blit(text_surface, (text_x, text_y))
+
+    return button_rect
+
+
+def draw_graph_toggle_button(screen: pygame.Surface, graph_enabled: bool) -> pygame.Rect:
+    """
+    Draw a toggle button for graph panel (ON/OFF).
+    Returns the button rect for click detection.
+    Position: bottom-left, right of VIS button
+    """
+    font = pygame.font.Font(None, 28)
+    status = "GRAPH: ON" if graph_enabled else "GRAPH: OFF"
+    color = (100, 200, 100) if graph_enabled else (200, 100, 100)
+
+    text_surface = font.render(status, True, (255, 255, 255))
+
+    # Button dimensions
+    padding = 10
+    button_width = text_surface.get_width() + padding * 2
+    button_height = text_surface.get_height() + padding * 2
+
+    # Position at bottom-left, offset from VIS button
+    button_x = 15 + 125  # VIS button width + gap
+    button_y = cfg.HEIGHT - button_height - 15
+    button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+
+    # Draw button background
+    pygame.draw.rect(screen, color, button_rect)
+    pygame.draw.rect(screen, (255, 255, 255), button_rect, 2)  # Border
+
+    # Draw text
+    text_x = button_x + padding
+    text_y = button_y + padding
+    screen.blit(text_surface, (text_x, text_y))
+
+    return button_rect
+
+
+def draw_graph_panel(screen: pygame.Surface, graph_data: dict) -> None:
+    """
+    Draw live evolutionary graph panel on the right side.
+    Displays trait evolution and population trends.
+    """
+    if not graph_data["times"]:
+        # Show empty panel with "Collecting data..." message
+        panel_width = 350
+        panel_height = cfg.HEIGHT - 100
+        panel_x = cfg.WIDTH - panel_width - 10
+        panel_y = 10
+        panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
+        bg_surface = pygame.Surface((panel_width, panel_height))
+        bg_surface.set_alpha(200)
+        bg_surface.fill((20, 20, 20))
+        screen.blit(bg_surface, (panel_x, panel_y))
+        pygame.draw.rect(screen, (200, 200, 200), panel_rect, 2)
+
+        font_title = pygame.font.Font(None, 28)
+        title_surface = font_title.render(
+            "Evolution Metrics", True, (255, 255, 255))
+        screen.blit(title_surface, (panel_x + 10, panel_y + 10))
+
+        font_msg = pygame.font.Font(None, 24)
+        msg = font_msg.render("Collecting data...", True, (150, 150, 150))
+        msg_x = panel_x + (panel_width - msg.get_width()) // 2
+        msg_y = panel_y + (panel_height - msg.get_height()) // 2
+        screen.blit(msg, (msg_x, msg_y))
+        return
+
+    # Panel dimensions
+    panel_width = 350
+    panel_height = cfg.HEIGHT - 100
+    panel_x = cfg.WIDTH - panel_width - 10
+    panel_y = 10
+
+    # Draw panel background
+    panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
+    bg_surface = pygame.Surface((panel_width, panel_height))
+    bg_surface.set_alpha(200)
+    bg_surface.fill((20, 20, 20))
+    screen.blit(bg_surface, (panel_x, panel_y))
+    pygame.draw.rect(screen, (200, 200, 200), panel_rect, 2)  # Border
+
+    # Title
+    font_title = pygame.font.Font(None, 24)
+    title_surface = font_title.render(
+        "Evolution Metrics", True, (255, 255, 255))
+    screen.blit(title_surface, (panel_x + 10, panel_y + 10))
+
+    # Normalize data for graphing (scale to panel size)
+    graph_area_height = panel_height - 60
+    graph_area_width = panel_width - 20
+    graph_area_x = panel_x + 10
+    graph_area_y = panel_y + 35
+
+    # Get data ranges
+    times = graph_data["times"]
+    if not times:
+        return
+
+    time_min, time_max = times[0], times[-1]
+    time_range = time_max - time_min if time_max > time_min else 1
+
+    # Helper function to draw a line graph
+    def draw_line_graph(data_list, color, label_text, label_idx):
+        if len(data_list) < 1:
+            return
+
+        # Handle single data point or constant values
+        if len(data_list) == 1:
+            data_min = data_list[0] * 0.9
+            data_max = data_list[0] * 1.1 if data_list[0] != 0 else 1.0
+        else:
+            data_min = min(data_list)
+            data_max = max(data_list)
+
+        data_range = data_max - \
+            data_min if (data_max - data_min) > 0.001 else 1.0
+
+        # Draw line
+        points = []
+        for i, val in enumerate(data_list):
+            if len(data_list) == 1:
+                x = graph_area_x + graph_area_width / 2
+            else:
+                x = graph_area_x + (i / (len(data_list) - 1)
+                                    ) * graph_area_width
+            y = graph_area_y + graph_area_height - \
+                ((val - data_min) / data_range * graph_area_height)
+            # Ensure coordinates are integers and valid
+            x_int = int(max(0, min(cfg.WIDTH, x)))
+            y_int = int(max(0, min(cfg.HEIGHT, y)))
+            points.append([x_int, y_int])
+
+        # Validate and draw
+        if len(points) < 1:
+            return
+
+        if len(points) >= 2:
+            # Draw line by connecting consecutive points
+            for i in range(len(points) - 1):
+                try:
+                    p1 = (int(points[i][0]), int(points[i][1]))
+                    p2 = (int(points[i+1][0]), int(points[i+1][1]))
+                    pygame.draw.line(screen, color, p1, p2, 3)
+                except Exception as e:
+                    print(f"Error drawing line segment {i}: {e}")
+        elif len(points) == 1:
+            # Draw a single point
+            pygame.draw.circle(screen, color, tuple(points[0]), 3)
+    colors = {
+        "vision": (100, 200, 255),      # Blue
+        "speed": (255, 200, 100),       # Orange
+        "metabolism": (100, 255, 100),  # Green
+        "memory": (255, 100, 200),      # Pink
+        "age": (200, 150, 255)          # Light Purple
+    }
+
+    idx = 0
+    for trait, color in colors.items():
+        if trait in graph_data and graph_data[trait]:
+            draw_line_graph(graph_data[trait], color,
+                            f"Avg {trait.capitalize()}", idx)
+            idx += 1
+
+    # Draw axes (subtle, so data lines are clearly visible)
+    pygame.draw.line(screen, (100, 100, 100), (graph_area_x, graph_area_y + graph_area_height),
+                     # X-axis
+                     (graph_area_x + graph_area_width, graph_area_y + graph_area_height), 1)
+    pygame.draw.line(screen, (100, 100, 100), (graph_area_x, graph_area_y),
+                     (graph_area_x, graph_area_y + graph_area_height), 1)  # Y-axis
+
+    # Draw legend (color-coded trait names)
+    legend_y = panel_y + 40
+    legend_x = panel_x + 10
+    font_legend = pygame.font.Font(None, 11)
+
+    for trait, color in colors.items():
+        # Draw colored square
+        square_size = 8
+        pygame.draw.rect(
+            screen, color, (legend_x, legend_y, square_size, square_size))
+
+        # Draw trait name next to square
+        trait_text = font_legend.render(
+            trait.capitalize(), True, (200, 200, 200))
+        screen.blit(trait_text, (legend_x + square_size + 5, legend_y - 1))
+
+        legend_y += 12
+
+    # Draw population indicator (small text)
+    if graph_data["population"]:
+        pop = graph_data["population"][-1]
+        gen = graph_data["generation"][-1] if graph_data["generation"] else 1
+        font_info = pygame.font.Font(None, 14)
+        pop_text = font_info.render(
+            f"Pop: {int(pop)} Gen: {int(gen)}", True, (200, 200, 200))
+        screen.blit(pop_text, (panel_x + 10, panel_y + panel_height - 25))
+
+
+def draw_restart_button(screen: pygame.Surface) -> pygame.Rect:
+    """
+    Draw a manual restart button.
+    Position: bottom-center
+    """
+    font = pygame.font.Font(None, 28)
+    text_surface = font.render("RESTART", True, (255, 255, 255))
+
+    # Button dimensions
+    padding = 10
+    button_width = text_surface.get_width() + padding * 2
+    button_height = text_surface.get_height() + padding * 2
+
+    # Position at bottom-center
+    button_x = (cfg.WIDTH - button_width) // 2
+    button_y = cfg.HEIGHT - button_height - 15
+    button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+
+    # Draw button background (red)
+    pygame.draw.rect(screen, (200, 50, 50), button_rect)
+    pygame.draw.rect(screen, (255, 255, 255), button_rect, 2)  # Border
+
+    # Draw text
+    text_x = button_x + padding
+    text_y = button_y + padding
+    screen.blit(text_surface, (text_x, text_y))
+
+    return button_rect
+
+
+def draw_disaster_button(screen: pygame.Surface) -> pygame.Rect:
+    """
+    Draw a manual disaster button.
+    Position: bottom-center-right (to the right of restart button)
+    """
+    font = pygame.font.Font(None, 28)
+    text_surface = font.render("DISASTER", True, (255, 255, 255))
+
+    # Button dimensions
+    padding = 10
+    button_width = text_surface.get_width() + padding * 2
+    button_height = text_surface.get_height() + padding * 2
+
+    # Position at bottom-center-right (next to restart button)
+    restart_button_x = (cfg.WIDTH - 115) // 2
+    button_x = restart_button_x + 130
+    button_y = cfg.HEIGHT - button_height - 15
+    button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+
+    # Draw button background (orange/yellow for disaster)
+    pygame.draw.rect(screen, (200, 120, 40), button_rect)
+    pygame.draw.rect(screen, (255, 255, 255), button_rect, 2)  # Border
+
+    # Draw text
+    text_x = button_x + padding
+    text_y = button_y + padding
+    screen.blit(text_surface, (text_x, text_y))
+
+    return button_rect
 
 
 def draw_reproduction_icon(screen: pygame.Surface, agents: list[ag.Agent]) -> None:
@@ -392,3 +707,96 @@ def draw_agent_debug_panel(screen: pygame.Surface, agent: ag.Agent) -> None:
     for line_surface in rendered_lines:
         screen.blit(line_surface, (panel_x + padding, current_y))
         current_y += line_surface.get_height() + 2
+
+
+def draw_chatbox(screen: pygame.Surface, chat_messages: list, elapsed_time: float, chat_fade_time: float = 5.0) -> None:
+    """
+    Draw collapsible chatbox on the bottom-left (Minecraft/RuneScape style).
+    Uses same styling as graph panel: dark background (20,20,20) with alpha 200.
+    Shows max 5 most recent messages with timestamps. No fading - messages stay until replaced.
+    """
+    # Panel dimensions
+    panel_width = 300
+    panel_height = 180
+    panel_x = 15
+    # Above buttons (approx 48px) with 15px gap
+    panel_y = cfg.HEIGHT - panel_height - 65
+
+    # Draw panel background
+    panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
+    bg_surface = pygame.Surface((panel_width, panel_height))
+    bg_surface.set_alpha(200)
+    bg_surface.fill((20, 20, 20))  # Match graph panel color
+    screen.blit(bg_surface, (panel_x, panel_y))
+    pygame.draw.rect(screen, (200, 200, 200), panel_rect,
+                     2)  # Match graph panel border
+
+    # Title
+    font_title = pygame.font.Font(None, 22)
+    title_surface = font_title.render("Chatbox", True, (255, 255, 255))
+    screen.blit(title_surface, (panel_x + 10, panel_y + 8))
+
+    # Keep only the most recent 5 messages (no fading, always show)
+    active_messages = chat_messages[-5:]
+
+    if not active_messages:
+        # Show empty message
+        font_msg = pygame.font.Font(None, 16)
+        msg = font_msg.render("No messages", True, (150, 150, 150))
+        msg_x = panel_x + 10
+        msg_y = panel_y + 45
+        screen.blit(msg, (msg_x, msg_y))
+        return
+
+    # Draw messages from top to bottom (oldest at top, newest at bottom)
+    font = pygame.font.Font(None, 15)
+    content_start_y = panel_y + 35
+    line_height = 28
+    max_height = panel_height - 45
+
+    y_offset = content_start_y
+    for msg, spawn_time in active_messages:
+        if y_offset - content_start_y >= max_height:
+            break
+
+        # Format message with timestamp
+        time_str = f"[{spawn_time:.1f}s]"
+        display_text = f"{time_str} {msg}"
+
+        # Render text at full opacity (no fading)
+        text_surface = font.render(display_text, True, (220, 220, 220))
+
+        # Draw to screen
+        screen.blit(text_surface, (panel_x + 10, y_offset))
+        y_offset += line_height
+
+
+def draw_chat_toggle_button(screen: pygame.Surface, chat_box_enabled: bool) -> None:
+    """
+    Draw chat toggle button (ON/OFF).
+    Position: bottom-left, right of GRAPH button
+    """
+    font = pygame.font.Font(None, 28)
+    status = "CHAT: ON" if chat_box_enabled else "CHAT: OFF"
+    color = (100, 200, 100) if chat_box_enabled else (200, 100, 100)
+
+    text_surface = font.render(status, True, (255, 255, 255))
+
+    # Button dimensions
+    padding = 10
+    button_width = text_surface.get_width() + padding * 2
+    button_height = text_surface.get_height() + padding * 2
+
+    # Position at bottom-left, right of GRAPH button
+    button_x = 15 + 125 + 180  # VIS + GRAPH widths
+    button_y = cfg.HEIGHT - button_height - 15
+    button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+
+    # Draw button background
+    pygame.draw.rect(screen, color, button_rect)
+    pygame.draw.rect(screen, (255, 255, 255), button_rect, 2)  # Border
+
+    # Draw text
+    text_x = button_x + padding
+    text_y = button_y + padding
+    screen.blit(text_surface, (text_x, text_y))

@@ -28,23 +28,59 @@ ICONS = {
 
 # Screen
 WIDTH, HEIGHT = 1280, 800
-FPS = 60
+FPS = 30
+
+# Simulation Mode
+HEADLESS_MODE = True  # Set to True for CSV-only mode (no visualization)
+# Max seconds to run (0 = infinite, set to 3600 for 1 hour)
+HEADLESS_MODE_DURATION = 0
+HEADLESS_MODE_MAX_GENERATION = 30  # Stop at generation (0 = infinite)
+# Auto-restart when population crashes (only in headless mode)
+HEADLESS_MODE_AUTO_RESTART = True
+# Min population to trigger restart (if population drops below this, restart)
+HEADLESS_MODE_MIN_POPULATION = 5
+# Min elapsed time before allowing restart (prevents restart spam)
+HEADLESS_MODE_MIN_TIME_BETWEEN_RESTARTS = 60  # seconds
 
 # Agents
-NUM_AGENTS = 20
+NUM_AGENTS = 10
 AGENT_RADIUS = 8
 # Based off seconds (set to 180 for 3 minutes, 60 for 1 minute testing)
-MAX_AGE = 80.0
+MAX_AGE = 35.0
+
+# Disaster System (natural population control)
+DISASTER_ENABLED = True  # Enable automatic disasters in headless mode
+# Trigger disaster when population exceeds this
+DISASTER_POPULATION_THRESHOLD = 10000
+DISASTER_MIN_GENERATIONS_APART = 10  # Minimum generations between disasters
+# If True, preferentially kill weaker agents (lower health)
+DISASTER_TARGET_WEAK = True
+DISASTER_TYPES = ["Plague", "Drought", "Disease",
+                  "Famine", "Storm", "Earthquake",
+                  "Tornado", "Volcanic Eruption",
+                  "Tsunami", "Meteor Strike",
+                  "Global Warming", "Alien Invasion",
+                  "Avengers Woop-sie", "Fire Nation",
+                  "Thanos Snap", "Typhoon",
+                  "Puppy Stampede", "Fungus Takeover",
+                  "Zombie Outbreak", "Pigeon Coup",
+                  "Giant Ant Colony", "Spaghetti Tornado",
+                  "Cat Judgement Day", "Cheese Shortage Crisis",
+                  "Banana Peel Pandemic", "Clown Invasion",
+                  "Godzilla Attack", "Volcanic Winters",
+                  "Asteroid"]  # Random disaster names
 
 # Thresholds
 THRESHOLDS = {
     # Hunger (0...100)
-    "HUNGER_SEEK": 35.0,        # Start looking for food
+    # Start looking for food (lower = enter SEEK sooner)
+    "HUNGER_SEEK": 45.0,
     "HUNGER_OK": 10.0,          # Stop eating
     "HUNGER_CRIT": 80.0,
 
     # Thirst (0...100)
-    "THIRST_SEEK": 35.0,        # Start looking for water
+    # Start looking for water (lower = enter SEEK sooner)
+    "THIRST_SEEK": 45.0,
     "THIRST_OK": 8.0,           # Stop drinking
     "THIRST_CRIT": 80.0,
 
@@ -60,17 +96,21 @@ THRESHOLDS = {
 
 # Rates (per second)
 RATES = {
-    "HUNGER_UP": 1.5,          # 0->100 in 23s
-    "THIRST_UP": 1.5,          # 0->100 in 21s
+    # 0->100 in 42s (moderate-high)
+    "HUNGER_UP": 2.4,
+    # 0->100 in 42s (moderate-high)
+    "THIRST_UP": 2.4,
     "ENERGY_DOWN": 0.8,        # 100->40 in 75s
 
-    # Health model
-    "HEALTH_REGEN": 0.25,                # when doing okay
-    "HEALTH_DRAIN_BASE": 0.06,           # baseline
+    # Health model - balanced for early survival + late population control
+    "HEALTH_REGEN": 0.35,               # increased for Gen 1 survival
+    # moderate baseline drain
+    "HEALTH_DRAIN_BASE": 0.85,
 
-    # extra drain when hunger/thirst past SEEK, or energy low
-    "HEALTH_DRAIN_SEEK": 0.18,
-    "HEALTH_DRAIN_CRIT": 0.9,           # extra drain if any critical
+    # extra drain when hungry/thirsty (selection pressure)
+    "HEALTH_DRAIN_SEEK": 3.0,
+    # extra drain if critical - serious penalty
+    "HEALTH_DRAIN_CRIT": 5.2,
 }
 
 RESOURCES = {
@@ -129,22 +169,23 @@ MEMORY = {
 }
 
 REPRODUCTION = {
-    "MIN_MATE_AGE": 20.0,                    # minimum age before eligible for mating
+    "MIN_MATE_AGE": 12.0,                    # lowered for Gen 1 bootstrap
     # success rate when two mates are in proximity
-    "REPRODUCTION_PROBABILITY": 0.8,
+    # aggressive reduction for population control
+    "REPRODUCTION_PROBABILITY": 0.40,
     # px; agents must be within this distance to mate
-    "MATE_RADIUS": 50.0,
+    "MATE_RADIUS": 80.0,
     # seconds before SEEK_MATE fails and agent returns to wander
-    "MATE_SEEK_TIMEOUT": 10.0,
+    "MATE_SEEK_TIMEOUT": 15.0,
     # seconds before parent can mate again (must be > 0 to prevent runaway loops)
     "REPRO_COOLDOWN": 3.5,
     # energy drained from each parent on successful reproduction
-    "REPRO_ENERGY_COST": 20.0,
+    "REPRO_ENERGY_COST": 35.0,
     "SPAWN_OFFSET_RANGE": 30.0,              # px; random offset from parent midpoint
     "REPRO_ANIMATION_DURATION": 1.0,         # seconds to show love icon
     # range of offspring per successful mating (random between min and max, inclusive)
     "OFFSPRING_MIN": 1,
-    "OFFSPRING_MAX": 3,
+    "OFFSPRING_MAX": 2,
 }
 
 MUTATION = {
