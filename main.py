@@ -10,6 +10,15 @@ import interaction
 import metrics
 import traits as tr
 
+
+def format_elapsed_time(seconds: float) -> str:
+    """Convert elapsed seconds to hh:mm:ss format."""
+    hours = int(seconds) // 3600
+    minutes = (int(seconds) % 3600) // 60
+    secs = int(seconds) % 60
+    return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+
+
 # Conditional pygame initialization based on headless mode
 if not cfg.HEADLESS_MODE:
     pygame.init()
@@ -54,7 +63,7 @@ def trigger_disaster(agents, current_generation, elapsed_time):
     print(
         f"\n🌪️  DISASTER: {disaster_type} strikes! {mortality_count} agents perished.")
     print(
-        f"   Population: {len(agents)} → {len(agents_to_keep)} | Gen {current_generation} | Elapsed: {elapsed_time:.1f}s\n")
+        f"   Population: {len(agents)} → {len(agents_to_keep)} | Gen {current_generation} | Elapsed: {format_elapsed_time(elapsed_time)}\n")
 
     # Add to chat if in visualization mode
     if not cfg.HEADLESS_MODE:
@@ -281,7 +290,7 @@ try:
         # Display generation progress in headless mode
         if cfg.HEADLESS_MODE and max_generation > last_displayed_generation:
             print(
-                f"Generation: {max_generation} | Population: {len(agents)} | Elapsed: {elapsed_time:.1f}s")
+                f"Generation: {max_generation} | Population: {len(agents)} | Elapsed: {format_elapsed_time(elapsed_time)}")
             last_displayed_generation = max_generation
 
         # DISASTER SYSTEM - Check if population exceeds threshold (headless mode only)
@@ -324,7 +333,7 @@ try:
 
                     if can_restart:
                         print(
-                            f"\n🔄 AUTO-RESTART: Population extinct at Gen {max_generation} (Elapsed: {elapsed_time:.1f}s)")
+                            f"\n🔄 AUTO-RESTART: Population extinct at Gen {max_generation} (Elapsed: {format_elapsed_time(elapsed_time)})")
                         agents, pond, bushes = initialize_simulation()
                         max_population = len(agents)
                         population_history = []
