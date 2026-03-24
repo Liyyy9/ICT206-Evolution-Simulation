@@ -41,7 +41,7 @@ FPS = 30
 HEADLESS_MODE = True  # Set to True for CSV-only mode (no visualization)
 # Max seconds to run (0 = infinite, set to 3600 for 1 hour)
 HEADLESS_MODE_DURATION = 0
-HEADLESS_MODE_MAX_GENERATION = 50  # Stop at generation (0 = infinite)
+HEADLESS_MODE_MAX_GENERATION = 100  # Stop at generation (0 = infinite)
 # Auto-restart when population crashes (only in headless mode)
 HEADLESS_MODE_AUTO_RESTART = True
 # Min population to trigger restart (if population drops below this, restart)
@@ -58,10 +58,12 @@ MAX_AGE = 50.0  # Increased to help Gen 1 bootstrap on bigger world
 # Disaster System (natural population control)
 DISASTER_ENABLED = True  # Enable automatic disasters in headless mode
 # Trigger disaster when population exceeds this
-DISASTER_POPULATION_THRESHOLD = 500
+DISASTER_POPULATION_THRESHOLD = 300  # Test 5A: lowered from 500
 DISASTER_MIN_GENERATIONS_APART = 5  # Minimum generations between disasters
 # If True, preferentially kill weaker agents (lower health)
 DISASTER_TARGET_WEAK = True
+# Disaster mortality rate (hardset, not random)
+DISASTER_MORTALITY_RATE = 0.85  # Test 5A: fixed at 85%
 DISASTER_TYPES = ["Plague", "Drought", "Disease",
                   "Famine", "Storm", "Earthquake",
                   "Tornado", "Volcanic Eruption",
@@ -192,7 +194,7 @@ REPRODUCTION = {
     "REPRO_ANIMATION_DURATION": 1.0,         # seconds to show love icon
     # range of offspring per successful mating (random between min and max, inclusive)
     "OFFSPRING_MIN": 1,
-    "OFFSPRING_MAX": 2,
+    "OFFSPRING_MAX": 1,  # Test 5A: reduced from 2 (max 1 child per mating)
 }
 
 MUTATION = {

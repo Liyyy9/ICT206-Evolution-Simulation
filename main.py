@@ -39,9 +39,9 @@ def trigger_disaster(agents, current_generation, elapsed_time):
     """
     import random
     disaster_type = random.choice(cfg.DISASTER_TYPES)
-    # Randomize mortality rate: 65-85%
-    random_mortality_rate = random.uniform(0.65, 0.85)
-    mortality_count = max(1, int(len(agents) * random_mortality_rate))
+    # Use configured mortality rate
+    mortality_rate = cfg.DISASTER_MORTALITY_RATE
+    mortality_count = max(1, int(len(agents) * mortality_rate))
 
     if cfg.DISASTER_TARGET_WEAK:
         # Sort by health (weakest first) and kill the weakest
