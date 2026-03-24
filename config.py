@@ -1,3 +1,4 @@
+import random
 # Define colours
 COLOURS = {
     "GRASS": (120, 190, 114),
@@ -51,10 +52,18 @@ MAX_AGE = 35.0
 # Disaster System (natural population control)
 DISASTER_ENABLED = True  # Enable automatic disasters in headless mode
 # Trigger disaster when population exceeds this
-DISASTER_POPULATION_THRESHOLD = 10000
-DISASTER_MIN_GENERATIONS_APART = 10  # Minimum generations between disasters
+DISASTER_POPULATION_THRESHOLD = 5000
+DISASTER_MIN_GENERATIONS_APART = 15  # Rare shocks, not routine culling
 # If True, preferentially kill weaker agents (lower health)
 DISASTER_TARGET_WEAK = True
+DISASTER_MORTALITY_RATE = random.uniform(0.60, 0.75)  # Reduced from 0.65-0.85
+
+# Logistic Growth Carrying Capacity (population density control)
+LOGISTIC_GROWTH_ENABLED = True  # Enable natural density-dependent mortality
+CARRYING_CAPACITY = 4000  # K: comfortable population limit for laptop
+# Formula: P(survival) = 1 - (current_population / CARRYING_CAPACITY)
+# At population = 2000: 50% extra survival penalty
+# At population = 4000: 100% extra survival penalty (hard limit)
 DISASTER_TYPES = ["Plague", "Drought", "Disease",
                   "Famine", "Storm", "Earthquake",
                   "Tornado", "Volcanic Eruption",

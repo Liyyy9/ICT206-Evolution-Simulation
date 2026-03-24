@@ -25,6 +25,10 @@ class MetricsLogger:
         self.current_generation_disaster = None
         # Theoretical maximum for efficiency formula (used for fixed 0-1 normalization)
         self.theoretical_max_fitness = 2.5
+        # Recovery rate tracking: generations to recover from disaster
+        self.last_disaster_generation = 0
+        self.population_before_disaster = 0
+        self.recovery_rate = 0  # generations since last disaster populated to ceiling
         self._initialize_csv()
 
     def _initialize_csv(self):
@@ -61,7 +65,8 @@ class MetricsLogger:
                 'Avg_Metabolism',
                 'Avg_Memory',
                 'Avg_Fitness',
-                'Disaster'
+                'Disaster',
+                'Recovery_Rate'
             ])
 
         print(f"Created metrics log: {self.csv_file}")
@@ -74,9 +79,11 @@ class MetricsLogger:
         """Increment death counter for current generation."""
         self.generation_deaths += 1
 
-    def record_disaster(self, disaster_type: str):
-        """Record disaster type for current generation."""
+    def record_disaster(self, disaster_type: str, generation: int = 0):
+        """Record disaster type for current generation and update recovery tracking."""
         self.current_generation_disaster = disaster_type
+        if generation > 0:
+            self.last_disaster_generation = generation
 
     def log_generation(self, agents: list[ag.Agent]):
         """
@@ -123,6 +130,9 @@ class MetricsLogger:
         # This allows fitness to start low and gradually improve toward 1.0
         avg_fitness = min(1.0, raw_fitness / self.theoretical_max_fitness)
 
+        # Calculate recovery rate: generations since last disaster
+        recovery_rate = max_gen - self.last_disaster_generation
+
         row = [
             max_gen,
             len(agents),
@@ -135,6 +145,7 @@ class MetricsLogger:
             avg_memory,
             avg_fitness,
             self.current_generation_disaster or "N/A",
+            recovery_rate,
         ]
 
         # Append to CSV

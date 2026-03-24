@@ -97,12 +97,19 @@ def process_reproduction(agents: list[ag.Agent]) -> list[ag.Agent]:
     return newborns
 
 
-def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBush]) -> bool:
+def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBush], current_population: int = 0) -> bool:
     """
     Update one agent for one frame.
     Returns True if agent remains alive, False if dead (caller removes it).
+    
+    Args:
+        a: Agent to update
+        dt: Delta time in seconds
+        pond: Pond resource
+        bushes: Food bush resources
+        current_population: Current population size (for logistic growth)
     """
-    ag.update_internal_state(a, dt)
+    ag.update_internal_state(a, dt, current_population)
     if not a.alive:
         return False
 

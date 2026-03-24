@@ -117,10 +117,15 @@ def create_agent(agent_id: int, width: int, height: int, radius: int) -> Agent:
     return a
 
 
-def update_internal_state(a: Agent, dt: float) -> None:
+def update_internal_state(a: Agent, dt: float, current_population: int = 0) -> None:
     """
     Updates stats using dt (seconds).
     Sets a.alive=False when dead. (main.py removes dead agents)
+
+    Args:
+        a: Agent to update
+        dt: Delta time in seconds
+        current_population: Current population size (for logistic growth penalty)
     """
 
     if not a.alive:
@@ -160,6 +165,14 @@ def update_internal_state(a: Agent, dt: float) -> None:
         drain += cfg.RATES["HEALTH_DRAIN_CRIT"]
     if a.energy <= cfg.THRESHOLDS["ENERGY_CRIT"]:
         drain += cfg.RATES["HEALTH_DRAIN_CRIT"]
+
+    # **NEW: Logistic growth density penalty**
+    # As population approaches carrying capacity, increase survival pressure
+    if cfg.LOGISTIC_GROWTH_ENABLED and cfg.CARRYING_CAPACITY > 0:
+        # P(survival) = 1 - (N / K)
+        # So density_penalty = (N / K) is applied as extra drain
+        density_penalty = current_population / cfg.CARRYING_CAPACITY
+        drain += drain * density_penalty  # Multiply drain by penalty ratio
 
     # Age-based drain multiplier: young agents have reduced drain, older agents have increased
     # Age 0-30s: 50% drain (reproductive window)

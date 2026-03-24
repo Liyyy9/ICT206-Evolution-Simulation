@@ -195,7 +195,7 @@ try:
                                 last_disaster_generation = max_generation
                                 for _ in range(death_count):
                                     metrics_logger.record_death()
-                                metrics_logger.record_disaster(disaster_type)
+                                metrics_logger.record_disaster(disaster_type, max_generation)
                                 disaster_triggered_this_frame = True
                                 test_msg = f"Population: {len(agents)}"
                                 if len(chat_messages) > 0:  # type: ignore
@@ -220,7 +220,7 @@ try:
 
         alive = []
         for a in agents:
-            if not sim.update_agent(a, dt, pond, bushes):
+            if not sim.update_agent(a, dt, pond, bushes, len(agents)):
                 continue
 
             alive.append(a)
@@ -293,7 +293,7 @@ try:
                     last_disaster_generation = max_generation
                     for _ in range(death_count):
                         metrics_logger.record_death()
-                    metrics_logger.record_disaster(disaster_type)
+                    metrics_logger.record_disaster(disaster_type, max_generation)
                     disaster_triggered_this_frame = True
 
         # Check headless mode exit conditions (AFTER max_generation is calculated and logged)
