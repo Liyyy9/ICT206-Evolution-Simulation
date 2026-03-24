@@ -338,9 +338,9 @@ def draw_visualization_toggle_button(screen: pygame.Surface, visualization_enabl
     button_width = text_surface.get_width() + padding * 2
     button_height = text_surface.get_height() + padding * 2
 
-    # Position at bottom-left
+    # Position at bottom-left (use DISPLAY dimensions for UI)
     button_x = 15
-    button_y = cfg.HEIGHT - button_height - 15
+    button_y = cfg.DISPLAY_HEIGHT - button_height - 15
     button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
 
     # Draw button background
@@ -372,9 +372,9 @@ def draw_graph_toggle_button(screen: pygame.Surface, graph_enabled: bool) -> pyg
     button_width = text_surface.get_width() + padding * 2
     button_height = text_surface.get_height() + padding * 2
 
-    # Position at bottom-left, offset from VIS button
+    # Position at bottom-left, offset from VIS button (use DISPLAY dimensions for UI)
     button_x = 15 + 125  # VIS button width + gap
-    button_y = cfg.HEIGHT - button_height - 15
+    button_y = cfg.DISPLAY_HEIGHT - button_height - 15
     button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
 
     # Draw button background
@@ -397,8 +397,8 @@ def draw_graph_panel(screen: pygame.Surface, graph_data: dict) -> None:
     if not graph_data["times"]:
         # Show empty panel with "Collecting data..." message
         panel_width = 350
-        panel_height = cfg.HEIGHT - 100
-        panel_x = cfg.WIDTH - panel_width - 10
+        panel_height = cfg.DISPLAY_HEIGHT - 100
+        panel_x = cfg.DISPLAY_WIDTH - panel_width - 10
         panel_y = 10
         panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
         bg_surface = pygame.Surface((panel_width, panel_height))
@@ -421,8 +421,8 @@ def draw_graph_panel(screen: pygame.Surface, graph_data: dict) -> None:
 
     # Panel dimensions
     panel_width = 350
-    panel_height = cfg.HEIGHT - 100
-    panel_x = cfg.WIDTH - panel_width - 10
+    panel_height = cfg.DISPLAY_HEIGHT - 100
+    panel_x = cfg.DISPLAY_WIDTH - panel_width - 10
     panel_y = 10
 
     # Draw panel background
@@ -564,8 +564,8 @@ def draw_restart_button(screen: pygame.Surface) -> pygame.Rect:
     button_height = text_surface.get_height() + padding * 2
 
     # Position at bottom-center
-    button_x = (cfg.WIDTH - button_width) // 2
-    button_y = cfg.HEIGHT - button_height - 15
+    button_x = (cfg.DISPLAY_WIDTH - button_width) // 2
+    button_y = cfg.DISPLAY_HEIGHT - button_height - 15
     button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
 
     # Draw button background (red)
@@ -594,9 +594,9 @@ def draw_disaster_button(screen: pygame.Surface) -> pygame.Rect:
     button_height = text_surface.get_height() + padding * 2
 
     # Position at bottom-center-right (next to restart button)
-    restart_button_x = (cfg.WIDTH - 115) // 2
+    restart_button_x = (cfg.DISPLAY_WIDTH - 115) // 2
     button_x = restart_button_x + 130
-    button_y = cfg.HEIGHT - button_height - 15
+    button_y = cfg.DISPLAY_HEIGHT - button_height - 15
     button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
 
     # Draw button background (orange/yellow for disaster)
@@ -719,8 +719,8 @@ def draw_chatbox(screen: pygame.Surface, chat_messages: list, elapsed_time: floa
     panel_width = 300
     panel_height = 180
     panel_x = 15
-    # Above buttons (approx 48px) with 15px gap
-    panel_y = cfg.HEIGHT - panel_height - 65
+    # Above buttons (approx 48px) with 15px gap (use DISPLAY_HEIGHT for UI)
+    panel_y = cfg.DISPLAY_HEIGHT - panel_height - 65
 
     # Draw panel background
     panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
@@ -789,7 +789,7 @@ def draw_chat_toggle_button(screen: pygame.Surface, chat_box_enabled: bool) -> N
 
     # Position at bottom-left, right of GRAPH button
     button_x = 15 + 125 + 180  # VIS + GRAPH widths
-    button_y = cfg.HEIGHT - button_height - 15
+    button_y = cfg.DISPLAY_HEIGHT - button_height - 15
     button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
 
     # Draw button background
