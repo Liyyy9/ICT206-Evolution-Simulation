@@ -1,6 +1,7 @@
 import pygame
 import math
 import sys
+import time
 
 import config as cfg
 import agent as ag
@@ -77,7 +78,7 @@ def trigger_disaster(agents, current_generation, elapsed_time):
 agents, pond, bushes = initialize_simulation()
 max_population = len(agents)  # Track max population ever reached
 max_generation = 1  # Track current generation
-elapsed_time = 0.0  # Track total elapsed time for timer
+start_time = time.time()  # Track simulation start time (real wall-clock)
 metrics_logger = metrics.MetricsLogger()  # Initialize metrics tracking
 last_log_time = 0.0  # Last time we logged gen metrics
 last_displayed_generation = 0  # Track last generation displayed in headless mode
@@ -127,7 +128,9 @@ try:
         else:
             # In headless mode, run as fast as possible
             dt = 1.0 / cfg.FPS  # Fixed timestep
-        elapsed_time += dt
+        
+        # Calculate real elapsed time from wall-clock
+        elapsed_time = time.time() - start_time
 
         # Reset disaster flag each frame
         disaster_triggered_this_frame = False
@@ -181,13 +184,13 @@ try:
                             agents, pond, bushes = initialize_simulation()
                             max_population = len(agents)
                             max_generation = 1
-                            elapsed_time = 0.0
+                            start_time = time.time()  # Reset timer to real wall-clock
                             population_history = []
                             last_log_time = 0.0
                             metrics_logger.reset_for_restart()
                             chat_messages = []
                             chat_messages.append(
-                                ["RESTART: Simulation reset", elapsed_time])
+                                ["RESTART: Simulation reset", 0.0])
                             graph_data["times"] = []
                             graph_data["vision"] = []
                             graph_data["speed"] = []
@@ -378,7 +381,7 @@ try:
 
                     if can_restart:
                         print(
-                            f"\n🔄 AUTO-RESTART: Population crashed to {len(agents)} at Gen {max_generation} (Elapsed: {elapsed_time:.1f}s)")
+                            f"\n🔄 AUTO-RESTART: Population crashed to {len(agents)} at Gen {max_generation} (Elapsed: {format_elapsed_time(elapsed_time)})")
                         agents, pond, bushes = initialize_simulation()
                         max_population = len(agents)
                         # DO NOT reset max_generation or elapsed_time - they continue accumulating
