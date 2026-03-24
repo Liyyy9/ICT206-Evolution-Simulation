@@ -266,28 +266,31 @@ def update_resources(bushes: List[FoodBush], dt: float) -> None:
 
 
 def draw_resources(screen: pygame.Surface, pond: Pond, bushes: List[FoodBush]) -> None:
+    # Apply zoom scale for world coordinates
+    z = cfg.ZOOM_SCALE
+    
     # --- POND: draw rim first (bigger circles), then water fill ---
     RIM_THICKNESS = 10
     for (x, y, r) in pond.circles:
         pygame.draw.circle(
             screen,
             cfg.COLOURS["WATER_RIM"],
-            (int(x), int(y)),
-            int(r + RIM_THICKNESS)
+            (int(x * z), int(y * z)),
+            max(1, int((r + RIM_THICKNESS) * z))
         )
 
     for (x, y, r) in pond.circles:
         pygame.draw.circle(
             screen,
             cfg.COLOURS["WATER"],
-            (int(x), int(y)),
-            int(r)
+            (int(x * z), int(y * z)),
+            max(1, int(r * z))
         )
 
     # sparkles (after pond fill so they sit on top)
     for (sx, sy, sr) in pond.sparkles:
         pygame.draw.circle(
-            screen, cfg.COLOURS["WATER_SPARKLE"], (int(sx), int(sy)), sr)
+            screen, cfg.COLOURS["WATER_SPARKLE"], (int(sx * z), int(sy * z)), max(1, int(sr * z)))
 
     # --- BUSHES: draw outline first, then fill ---
     BUSH_OUTLINE_THICKNESS = 4
@@ -297,16 +300,16 @@ def draw_resources(screen: pygame.Surface, pond: Pond, bushes: List[FoodBush]) -
             pygame.draw.circle(
                 screen,
                 cfg.COLOURS["BUSH_OUTLINE"],
-                (int(x), int(y)),
-                int(r + BUSH_OUTLINE_THICKNESS)
+                (int(x * z), int(y * z)),
+                max(1, int((r + BUSH_OUTLINE_THICKNESS) * z))
             )
         # fill
         for (x, y, r) in b.blob_circles:
             pygame.draw.circle(
                 screen,
                 cfg.COLOURS["BUSH"],
-                (int(x), int(y)),
-                int(r)
+                (int(x * z), int(y * z)),
+                max(1, int(r * z))
             )
 
     fr = cfg.RESOURCES["FOOD_RADIUS"]
@@ -315,9 +318,9 @@ def draw_resources(screen: pygame.Surface, pond: Pond, bushes: List[FoodBush]) -
     for b in bushes:
         for f in b.food:
             pygame.draw.circle(
-                screen, cfg.COLOURS["FOOD_RIM"], (int(f.x), int(f.y)), fr + rim)
+                screen, cfg.COLOURS["FOOD_RIM"], (int(f.x * z), int(f.y * z)), max(1, int((fr + rim) * z)))
             pygame.draw.circle(
-                screen, cfg.COLOURS["FOOD"], (int(f.x), int(f.y)), fr)
+                screen, cfg.COLOURS["FOOD"], (int(f.x * z), int(f.y * z)), max(1, int(fr * z)))
 
 # --------------------------
 # COLLISION HELPERS (solid)

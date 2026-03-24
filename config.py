@@ -26,8 +26,15 @@ ICONS = {
     "LOVE": "assets/love.png",
 }
 
-# Screen
-WIDTH, HEIGHT = 1280, 800
+# Screen & World
+# Display window (what pygame shows on screen, fits on monitor)
+DISPLAY_WIDTH, DISPLAY_HEIGHT = 1600, 900
+# World coordinates (where agents actually live - bigger world with zoomed-out view)
+WORLD_WIDTH, WORLD_HEIGHT = 2400, 1350
+# For backward compatibility and simulation logic
+WIDTH, HEIGHT = WORLD_WIDTH, WORLD_HEIGHT
+# Camera zoom factor (display size / world size)
+ZOOM_SCALE = DISPLAY_WIDTH / WORLD_WIDTH if WORLD_WIDTH > 0 else 1.0
 FPS = 30
 
 # Simulation Mode
@@ -51,8 +58,8 @@ MAX_AGE = 35.0
 # Disaster System (natural population control)
 DISASTER_ENABLED = True  # Enable automatic disasters in headless mode
 # Trigger disaster when population exceeds this
-DISASTER_POPULATION_THRESHOLD = 10000
-DISASTER_MIN_GENERATIONS_APART = 10  # Minimum generations between disasters
+DISASTER_POPULATION_THRESHOLD = 5000
+DISASTER_MIN_GENERATIONS_APART = 3  # Minimum generations between disasters
 # If True, preferentially kill weaker agents (lower health)
 DISASTER_TARGET_WEAK = True
 DISASTER_TYPES = ["Plague", "Drought", "Disease",

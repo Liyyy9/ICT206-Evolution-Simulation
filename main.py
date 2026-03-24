@@ -13,7 +13,7 @@ import traits as tr
 # Conditional pygame initialization based on headless mode
 if not cfg.HEADLESS_MODE:
     pygame.init()
-    screen = pygame.display.set_mode((cfg.WIDTH, cfg.HEIGHT))
+    screen = pygame.display.set_mode((cfg.DISPLAY_WIDTH, cfg.DISPLAY_HEIGHT))
     clock = pygame.time.Clock()
 else:
     screen = None
@@ -231,7 +231,8 @@ try:
                 if not (math.isfinite(a.x) and math.isfinite(a.y)):  # type: ignore
                     continue
 
-                cx, cy = int(a.x), int(a.y)
+                cx, cy = int(a.x * cfg.ZOOM_SCALE), int(a.y * cfg.ZOOM_SCALE)
+                scaled_radius = max(2, int(cfg.AGENT_RADIUS * cfg.ZOOM_SCALE))
                 generation = getattr(a, "generation", 1)
 
                 # Draw filled circle
@@ -239,13 +240,13 @@ try:
                     screen,  # type: ignore
                     cfg.COLOURS["OUTLINE"],
                     (cx, cy),
-                    cfg.AGENT_RADIUS + 1
+                    scaled_radius + 1
                 )
                 pygame.draw.circle(
                     screen,  # type: ignore
                     a.colour,
                     (cx, cy),
-                    cfg.AGENT_RADIUS
+                    scaled_radius
                 )
 
         # Track deaths for metrics
