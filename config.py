@@ -27,8 +27,13 @@ ICONS = {
     "LOVE": "assets/love.png",
 }
 
-# Screen
-WIDTH, HEIGHT = 1280, 800
+# Screen & World
+# Display window (what pygame shows on screen)
+DISPLAY_WIDTH, DISPLAY_HEIGHT = 1600, 900
+# World coordinates (where agents actually live - larger world, zoomed out view)
+WORLD_WIDTH, WORLD_HEIGHT = 2400, 1350
+# For backward compatibility with existing code
+WIDTH, HEIGHT = WORLD_WIDTH, WORLD_HEIGHT
 FPS = 30
 
 # Simulation Mode
@@ -130,7 +135,7 @@ RESOURCES = {
     "POND_RADIUS_MAX": 80,
 
     # bushes + food dots
-    "NUM_BUSHES": 4,
+    "NUM_BUSHES": 4,  # Keep at 4 for moderate competition on larger world
     "BUSH_BLOB_CIRCLES": 3,
     "BUSH_BLOB_RADIUS_MIN": 26,
     "BUSH_BLOB_RADIUS_MAX": 42,
