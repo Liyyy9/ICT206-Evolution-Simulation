@@ -37,6 +37,17 @@ def load_csv_data(csv_file):
                 data["avg_metabolism"].append(avg_metabolism)
                 data["avg_memory"].append(avg_memory)
 
+                # Trait variance data (population genetic diversity)
+                var_vision = float(row.get("Var_Vision", 0))
+                var_speed = float(row.get("Var_Speed", 0))
+                var_metabolism = float(row.get("Var_Metabolism", 0))
+                var_memory = float(row.get("Var_Memory", 0))
+
+                data["var_vision"].append(var_vision)
+                data["var_speed"].append(var_speed)
+                data["var_metabolism"].append(var_metabolism)
+                data["var_memory"].append(var_memory)
+
                 # Fitness score: use from CSV if available, else calculate from traits
                 if "Avg_Fitness" in reader.fieldnames:
                     avg_fitness = float(row.get("Avg_Fitness", 0))
@@ -184,53 +195,34 @@ def create_plots(data, csv_file=None):
     ax.set_title("Average Lifespan")
     ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
 
-    # Plot 5: Trait Divergence (evolutionary change from baseline)
+    # Plot 5: Population Trait Variance (genetic diversity)
     ax = axes[1, 1]
 
-    # Calculate trait divergence for each generation (how much traits changed from Gen 1)
-    # Reference values from first generation
-    if len(data["avg_vision"]) > 0:
-        vision_ref = data["avg_vision"][0]
-        speed_ref = data["avg_speed"][0]
-        metabolism_ref = data["avg_metabolism"][0]
-        memory_ref = data["avg_memory"][0]
+    # Calculate combined variance (average of all trait variances)
+    if len(data["var_vision"]) > 0:
+        combined_var = [(v + s + me + ma) / 4 for v, s, me, ma in
+                        zip(data["var_vision"], data["var_speed"], data["var_metabolism"], data["var_memory"])]
 
-        # Typical trait range is ~0.6 to 1.5, so range ≈ 0.9
-        trait_range = 0.9
-
-        # Calculate divergence for each trait (normalized to 0-1)
-        vision_div = [abs(v - vision_ref) /
-                      trait_range for v in data["avg_vision"]]
-        speed_div = [abs(v - speed_ref) /
-                     trait_range for v in data["avg_speed"]]
-        metabolism_div = [abs(v - metabolism_ref) /
-                          trait_range for v in data["avg_metabolism"]]
-        memory_div = [abs(v - memory_ref) /
-                      trait_range for v in data["avg_memory"]]
-
-        # Plot individual trait divergences
-        ax.plot(x, vision_div, color='blue',
+        # Plot individual trait variances
+        ax.plot(x, data["var_vision"], color='blue',
                 linewidth=2, label='Vision', alpha=0.7)
-        ax.plot(x, speed_div, color='orange',
+        ax.plot(x, data["var_speed"], color='orange',
                 linewidth=2, label='Speed', alpha=0.7)
-        ax.plot(x, metabolism_div, color='green',
+        ax.plot(x, data["var_metabolism"], color='green',
                 linewidth=2, label='Metabolism', alpha=0.7)
-        ax.plot(x, memory_div, color='pink',
+        ax.plot(x, data["var_memory"], color='pink',
                 linewidth=2, label='Memory', alpha=0.7)
 
-        # Calculate and plot combined divergence (average of all traits)
-        combined_div = [(v + s + me + ma) / 4 for v, s, me, ma in
-                        zip(vision_div, speed_div, metabolism_div, memory_div)]
-        ax.plot(x, combined_div, color='red', linewidth=2.5,
+        # Plot combined variance
+        ax.plot(x, combined_var, color='red', linewidth=2.5,
                 label='Average', linestyle='--')
 
-    ax.set_ylabel("Trait Divergence (normalized)",
+    ax.set_ylabel("Trait Variance (population diversity)",
                   fontsize=10, fontweight='bold')
     ax.set_xlabel("Generation")
-    ax.set_ylim([0, 0.5])
     ax.legend(loc='best', fontsize=8)
     ax.grid(True, alpha=0.3)
-    ax.set_title("Trait Divergence (Evolutionary Change)")
+    ax.set_title("Population Trait Variance (Genetic Diversity)")
     ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
 
     # Plot 6: Population vs Fitness Correlation

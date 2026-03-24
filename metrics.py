@@ -60,6 +60,10 @@ class MetricsLogger:
                 'Avg_Speed',
                 'Avg_Metabolism',
                 'Avg_Memory',
+                'Var_Vision',
+                'Var_Speed',
+                'Var_Metabolism',
+                'Var_Memory',
                 'Avg_Fitness',
                 'Disaster'
             ])
@@ -111,6 +115,12 @@ class MetricsLogger:
             len(metabolisms) if metabolisms else 0
         avg_memory = sum(memories) / len(memories) if memories else 0
 
+        # Calculate trait variance (population genetic diversity)
+        var_vision = self._calculate_variance(visions, avg_vision)
+        var_speed = self._calculate_variance(speeds, avg_speed)
+        var_metabolism = self._calculate_variance(metabolisms, avg_metabolism)
+        var_memory = self._calculate_variance(memories, avg_memory)
+
         # Calculate fitness using efficiency formula: (vision + speed + memory) / 3 * (1 / metabolism)
         # Avoid division by zero
         if avg_metabolism > 0:
@@ -133,6 +143,10 @@ class MetricsLogger:
             avg_speed,
             avg_metabolism,
             avg_memory,
+            var_vision,
+            var_speed,
+            var_metabolism,
+            var_memory,
             avg_fitness,
             self.current_generation_disaster or "N/A",
         ]
@@ -146,6 +160,13 @@ class MetricsLogger:
         self.generation_births = 0
         self.generation_deaths = 0
         self.current_generation_disaster = None
+
+    def _calculate_variance(self, values: list, mean: float) -> float:
+        """Calculate variance of a list of values."""
+        if not values or len(values) < 2:
+            return 0.0
+        variance = sum((v - mean) ** 2 for v in values) / len(values)
+        return variance
 
     def reset_for_restart(self):
         """Called when simulation restarts - creates a new CSV file."""
