@@ -168,7 +168,7 @@ RESOURCES = {
 }
 
 SENSING = {
-    "VISION_RADIUS": 220.0,        # px; try 180–280
+    "VISION_RADIUS": 130.0,        # px; reduced to force competition on larger world
     "STEER_STRENGTH": 0.18,        # 0..1; higher = more direct steering
     "WANDER_JITTER": 0.35,         # how much random turn during wandering
     "TARGET_REACHED_DIST": 14.0,   # px; when close enough to food, treat as "arrived"
