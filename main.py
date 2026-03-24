@@ -41,17 +41,18 @@ def initialize_simulation():
     return agents, pond, bushes
 
 
-def trigger_disaster(agents, current_generation, elapsed_time, override_mortality=None, silent=False):
+def trigger_disaster(agents, current_generation, elapsed_time, override_mortality=None, silent=False, disaster_type_override=None):
     """
     Trigger a natural disaster that culls population.
     If TARGET_WEAK is True, preferentially kills weaker agents.
     Args:
         override_mortality: Optional mortality rate (0-1). If None, uses cfg.DISASTER_MORTALITY_RATE
         silent: If True, skip the disaster description line (used for critical overpopulation)
+        disaster_type_override: Optional disaster type string. If None, selects random from DISASTER_TYPES
     Returns tuple of (updated_agent_list, death_count, disaster_type).
     """
     import random
-    disaster_type = random.choice(cfg.DISASTER_TYPES)
+    disaster_type = disaster_type_override if disaster_type_override else random.choice(cfg.DISASTER_TYPES)
     # Use override mortality if provided, otherwise use configured rate
     mortality_rate = override_mortality if override_mortality is not None else cfg.DISASTER_MORTALITY_RATE
     mortality_count = max(1, int(len(agents) * mortality_rate))
@@ -308,7 +309,7 @@ try:
             if len(agents) >= 10000:
                 print("🚨 CRITICAL OVERPOPULATION: Ecological Collapse Triggered!")
                 agents, death_count, disaster_type = trigger_disaster(
-                    agents, max_generation, elapsed_time, override_mortality=0.90, silent=True)
+                    agents, max_generation, elapsed_time, override_mortality=0.90, silent=True, disaster_type_override="CRITICAL_OVERPOPULATION")
                 last_disaster_generation = max_generation
                 for _ in range(death_count):
                     metrics_logger.record_death()
