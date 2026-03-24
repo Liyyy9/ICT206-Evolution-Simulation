@@ -41,7 +41,7 @@ FPS = 30
 HEADLESS_MODE = True  # Set to True for CSV-only mode (no visualization)
 # Max seconds to run (0 = infinite, set to 3600 for 1 hour)
 HEADLESS_MODE_DURATION = 0
-HEADLESS_MODE_MAX_GENERATION = 30  # Stop at generation (0 = infinite)
+HEADLESS_MODE_MAX_GENERATION = 50  # Stop at generation (0 = infinite)
 # Auto-restart when population crashes (only in headless mode)
 HEADLESS_MODE_AUTO_RESTART = True
 # Min population to trigger restart (if population drops below this, restart)
@@ -58,8 +58,8 @@ MAX_AGE = 50.0  # Increased to help Gen 1 bootstrap on bigger world
 # Disaster System (natural population control)
 DISASTER_ENABLED = True  # Enable automatic disasters in headless mode
 # Trigger disaster when population exceeds this
-DISASTER_POPULATION_THRESHOLD = 5000
-DISASTER_MIN_GENERATIONS_APART = 3  # Minimum generations between disasters
+DISASTER_POPULATION_THRESHOLD = 500
+DISASTER_MIN_GENERATIONS_APART = 5  # Minimum generations between disasters
 # If True, preferentially kill weaker agents (lower health)
 DISASTER_TARGET_WEAK = True
 DISASTER_TYPES = ["Plague", "Drought", "Disease",
@@ -185,9 +185,9 @@ REPRODUCTION = {
     # seconds before SEEK_MATE fails and agent returns to wander
     "MATE_SEEK_TIMEOUT": 15.0,
     # seconds before parent can mate again (must be > 0 to prevent runaway loops)
-    "REPRO_COOLDOWN": 3.5,
+    "REPRO_COOLDOWN": 5.0,
     # energy drained from each parent on successful reproduction
-    "REPRO_ENERGY_COST": 35.0,
+    "REPRO_ENERGY_COST": 40.0,
     "SPAWN_OFFSET_RANGE": 30.0,              # px; random offset from parent midpoint
     "REPRO_ANIMATION_DURATION": 1.0,         # seconds to show love icon
     # range of offspring per successful mating (random between min and max, inclusive)
