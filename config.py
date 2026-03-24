@@ -49,10 +49,10 @@ HEADLESS_MODE_MIN_POPULATION = 5
 HEADLESS_MODE_MIN_TIME_BETWEEN_RESTARTS = 60  # seconds
 
 # Agents
-NUM_AGENTS = 10
+NUM_AGENTS = 20
 AGENT_RADIUS = 8
 # Based off seconds (set to 180 for 3 minutes, 60 for 1 minute testing)
-MAX_AGE = 35.0
+MAX_AGE = 60.0
 
 # Disaster System (natural population control)
 DISASTER_ENABLED = True  # Enable automatic disasters in headless mode
@@ -185,8 +185,8 @@ MEMORY = {
 REPRODUCTION = {
     "MIN_MATE_AGE": 12.0,                    # lowered for Gen 1 bootstrap
     # success rate when two mates are in proximity
-    # aggressive reduction for population control
-    "REPRODUCTION_PROBABILITY": 0.40,
+    # reduced to control post-disaster population explosion
+    "REPRODUCTION_PROBABILITY": 0.25,
     # px; agents must be within this distance to mate
     "MATE_RADIUS": 80.0,
     # seconds before SEEK_MATE fails and agent returns to wander
