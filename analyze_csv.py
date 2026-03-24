@@ -50,6 +50,9 @@ def load_csv_data(csv_file):
                 # Age data
                 data["avg_age"].append(float(row.get("Avg_Age", 0)))
 
+                # Recovery rate: generations to recover from last disaster
+                data["recovery_rate"].append(int(row.get("Recovery_Rate", 0)))
+
         return data
     except Exception as e:
         print(f"Error reading CSV: {e}")
@@ -184,25 +187,16 @@ def create_plots(data, csv_file=None):
     ax.set_title("Average Lifespan")
     ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
 
-    # Plot 5: Birth/Death Ratio
+    # Plot 5: Recovery Rate (Generations Since Disaster)
     ax = axes[1, 1]
-    # Calculate birth/death ratio (handle division by zero)
-    ratio = []
-    for b, d in zip(data["births"], data["deaths"]):
-        if d > 0:
-            ratio.append(b / d)
-        else:
-            # If no deaths, ratio is undefined, use 0 for plotting
-            ratio.append(0)
-
-    ax.plot(x, ratio, color='purple', linewidth=2.5, marker='o', markersize=4)
+    ax.plot(x, data["recovery_rate"], color='purple', linewidth=2.5, marker='o', markersize=4)
     ax.axhline(y=1.0, color='gray', linestyle='--',
-               linewidth=1.5, label='Ideal Balance (1.0)')
-    ax.set_ylabel("Births / Deaths Ratio", fontsize=10, fontweight='bold')
+               linewidth=1.5, label='Instant Recovery (1 gen)')
+    ax.set_ylabel("Generations Since Disaster", fontsize=10, fontweight='bold')
     ax.set_xlabel("Generation")
     ax.legend(loc='best', fontsize=9)
     ax.grid(True, alpha=0.3)
-    ax.set_title("Birth/Death Ratio Trend")
+    ax.set_title("Population Recovery Rate")
     ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
 
     # Plot 6: Population vs Fitness Correlation
