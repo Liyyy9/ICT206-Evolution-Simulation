@@ -194,7 +194,7 @@ REPRODUCTION = {
     "REPRO_ANIMATION_DURATION": 1.0,         # seconds to show love icon
     # range of offspring per successful mating (random between min and max, inclusive)
     "OFFSPRING_MIN": 1,
-    "OFFSPRING_MAX": 2,
+    "OFFSPRING_MAX": 1,
 }
 
 MUTATION = {

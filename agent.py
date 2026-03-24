@@ -130,6 +130,10 @@ def update_internal_state(a: Agent, dt: float, current_population: int = 0) -> N
 
     if not a.alive:
         return
+    
+    # DEBUG: Verify logistic growth population parameter is being passed
+    if cfg.LOGISTIC_GROWTH_ENABLED and current_population == 0:
+        print(f"[WARNING] current_population=0 in update_internal_state - parameter not passed correctly!")
 
     a.age += dt
 
