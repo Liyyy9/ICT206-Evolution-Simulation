@@ -184,25 +184,53 @@ def create_plots(data, csv_file=None):
     ax.set_title("Average Lifespan")
     ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
 
-    # Plot 5: Birth/Death Ratio
+    # Plot 5: Trait Divergence (evolutionary change from baseline)
     ax = axes[1, 1]
-    # Calculate birth/death ratio (handle division by zero)
-    ratio = []
-    for b, d in zip(data["births"], data["deaths"]):
-        if d > 0:
-            ratio.append(b / d)
-        else:
-            # If no deaths, ratio is undefined, use 0 for plotting
-            ratio.append(0)
 
-    ax.plot(x, ratio, color='purple', linewidth=2.5, marker='o', markersize=4)
-    ax.axhline(y=1.0, color='gray', linestyle='--',
-               linewidth=1.5, label='Ideal Balance (1.0)')
-    ax.set_ylabel("Births / Deaths Ratio", fontsize=10, fontweight='bold')
+    # Calculate trait divergence for each generation (how much traits changed from Gen 1)
+    # Reference values from first generation
+    if len(data["avg_vision"]) > 0:
+        vision_ref = data["avg_vision"][0]
+        speed_ref = data["avg_speed"][0]
+        metabolism_ref = data["avg_metabolism"][0]
+        memory_ref = data["avg_memory"][0]
+
+        # Typical trait range is ~0.6 to 1.5, so range ≈ 0.9
+        trait_range = 0.9
+
+        # Calculate divergence for each trait (normalized to 0-1)
+        vision_div = [abs(v - vision_ref) /
+                      trait_range for v in data["avg_vision"]]
+        speed_div = [abs(v - speed_ref) /
+                     trait_range for v in data["avg_speed"]]
+        metabolism_div = [abs(v - metabolism_ref) /
+                          trait_range for v in data["avg_metabolism"]]
+        memory_div = [abs(v - memory_ref) /
+                      trait_range for v in data["avg_memory"]]
+
+        # Plot individual trait divergences
+        ax.plot(x, vision_div, color='blue',
+                linewidth=2, label='Vision', alpha=0.7)
+        ax.plot(x, speed_div, color='orange',
+                linewidth=2, label='Speed', alpha=0.7)
+        ax.plot(x, metabolism_div, color='green',
+                linewidth=2, label='Metabolism', alpha=0.7)
+        ax.plot(x, memory_div, color='pink',
+                linewidth=2, label='Memory', alpha=0.7)
+
+        # Calculate and plot combined divergence (average of all traits)
+        combined_div = [(v + s + me + ma) / 4 for v, s, me, ma in
+                        zip(vision_div, speed_div, metabolism_div, memory_div)]
+        ax.plot(x, combined_div, color='red', linewidth=2.5,
+                label='Average', linestyle='--')
+
+    ax.set_ylabel("Trait Divergence (normalized)",
+                  fontsize=10, fontweight='bold')
     ax.set_xlabel("Generation")
-    ax.legend(loc='best', fontsize=9)
+    ax.set_ylim([0, 0.5])
+    ax.legend(loc='best', fontsize=8)
     ax.grid(True, alpha=0.3)
-    ax.set_title("Birth/Death Ratio Trend")
+    ax.set_title("Trait Divergence (Evolutionary Change)")
     ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
 
     # Plot 6: Population vs Fitness Correlation
