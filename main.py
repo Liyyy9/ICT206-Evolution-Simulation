@@ -136,7 +136,7 @@ try:
                         button_height = 48  # Approx height of button
                         button_width = 110  # Approx width of button
                         button_x = 15
-                        button_y = cfg.HEIGHT - button_height - 15
+                        button_y = cfg.DISPLAY_HEIGHT - button_height - 15
                         vis_button_rect = pygame.Rect(
                             button_x, button_y, button_width, button_height)
 
@@ -148,10 +148,10 @@ try:
                         # Chat button rect (top-left, right of VIS)
                         chat_button_x = button_x + 275
                         chat_button_rect = pygame.Rect(
-                            chat_button_x, cfg.HEIGHT - button_height - 15, 110, button_height)
+                            chat_button_x, cfg.DISPLAY_HEIGHT - button_height - 15, 110, button_height)
 
                         # Restart button rect (bottom center)
-                        restart_button_x = (cfg.WIDTH - 115) // 2
+                        restart_button_x = (cfg.DISPLAY_WIDTH - 115) // 2
                         restart_button_rect = pygame.Rect(
                             restart_button_x, button_y, 115, button_height)
 

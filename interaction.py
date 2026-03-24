@@ -40,8 +40,12 @@ def get_agent_at_mouse(agents: list[ag.Agent], mouse_pos: tuple) -> ag.Agent | N
     Check if mouse is hovering over any agent.
     Returns the agent if found, None otherwise.
     Extended radius for easier detection.
+    Mouse coordinates are in display space, agents are in world space - must convert.
     """
-    mx, my = mouse_pos
+    mx_display, my_display = mouse_pos
+    # Convert display coordinates to world coordinates
+    mx = mx_display / cfg.ZOOM_SCALE
+    my = my_display / cfg.ZOOM_SCALE
     hover_radius = cfg.AGENT_RADIUS + 15
     for a in agents:
         dx = a.x - mx
