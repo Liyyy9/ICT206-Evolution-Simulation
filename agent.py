@@ -130,10 +130,11 @@ def update_internal_state(a: Agent, dt: float, current_population: int = 0) -> N
 
     if not a.alive:
         return
-    
+
     # DEBUG: Verify logistic growth population parameter is being passed
     if cfg.LOGISTIC_GROWTH_ENABLED and current_population == 0:
-        print(f"[WARNING] current_population=0 in update_internal_state - parameter not passed correctly!")
+        print(
+            f"[WARNING] current_population=0 in update_internal_state - parameter not passed correctly!")
 
     a.age += dt
 
@@ -171,12 +172,12 @@ def update_internal_state(a: Agent, dt: float, current_population: int = 0) -> N
         drain += cfg.RATES["HEALTH_DRAIN_CRIT"]
 
     # **NEW: Logistic growth density penalty**
-    # As population approaches carrying capacity, increase survival pressure
+    # As population approaches carrying capacity, increase survival pressure exponentially
     if cfg.LOGISTIC_GROWTH_ENABLED and cfg.CARRYING_CAPACITY > 0:
-        # P(survival) = 1 - (N / K)
-        # So density_penalty = (N / K) is applied as extra drain
-        density_penalty = current_population / cfg.CARRYING_CAPACITY
-        drain += drain * density_penalty  # Multiply drain by penalty ratio
+        # Exponential penalty: at N=K, penalty_ratio=1; at N=2K, ratio=4; at N=3K, ratio=9
+        # This creates quadratic pressure to prevent runaway growth
+        density_ratio = current_population / cfg.CARRYING_CAPACITY
+        drain *= (1.0 + (density_ratio ** 2))  # Quadratic multiplier for exponential regulation
 
     # Age-based drain multiplier: young agents have reduced drain, older agents have increased
     # Age 0-30s: 50% drain (reproductive window)
