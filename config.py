@@ -53,7 +53,7 @@ HEADLESS_MODE_MIN_TIME_BETWEEN_RESTARTS = 60  # seconds
 NUM_AGENTS = 10
 AGENT_RADIUS = 8
 # Based off seconds (set to 180 for 3 minutes, 60 for 1 minute testing)
-MAX_AGE = 35.0
+MAX_AGE = 50.0  # Increased to help Gen 1 bootstrap on bigger world
 
 # Disaster System (natural population control)
 DISASTER_ENABLED = True  # Enable automatic disasters in headless mode
@@ -128,7 +128,7 @@ RESOURCES = {
     "POND_RADIUS_MAX": 80,
 
     # bushes + food dots
-    "NUM_BUSHES": 4,
+    "NUM_BUSHES": 4,  # More bushes across bigger world for competitive pressure
     "BUSH_BLOB_CIRCLES": 3,
     "BUSH_BLOB_RADIUS_MIN": 26,
     "BUSH_BLOB_RADIUS_MAX": 42,
@@ -161,7 +161,7 @@ RESOURCES = {
 }
 
 SENSING = {
-    "VISION_RADIUS": 220.0,        # px; try 180–280
+    "VISION_RADIUS": 130.0,        # px; reduced to force competition on larger world
     "STEER_STRENGTH": 0.18,        # 0..1; higher = more direct steering
     "WANDER_JITTER": 0.35,         # how much random turn during wandering
     "TARGET_REACHED_DIST": 14.0,   # px; when close enough to food, treat as "arrived"
