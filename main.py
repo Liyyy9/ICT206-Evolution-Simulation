@@ -52,7 +52,8 @@ def trigger_disaster(agents, current_generation, elapsed_time, override_mortalit
     Returns tuple of (updated_agent_list, death_count, disaster_type).
     """
     import random
-    disaster_type = disaster_type_override if disaster_type_override else random.choice(cfg.DISASTER_TYPES)
+    disaster_type = disaster_type_override if disaster_type_override else random.choice(
+        cfg.DISASTER_TYPES)
     # Use override mortality if provided, otherwise use configured rate
     mortality_rate = override_mortality if override_mortality is not None else cfg.DISASTER_MORTALITY_RATE
     mortality_count = max(1, int(len(agents) * mortality_rate))
@@ -305,11 +306,11 @@ try:
 
         # DISASTER SYSTEM - Check if population exceeds threshold (headless mode only)
         if cfg.HEADLESS_MODE and cfg.DISASTER_ENABLED and not disaster_triggered_this_frame:
-            # HARD SAFETY CAP: If population exceeds 10,000, trigger immediate 90% mortality disaster
+            # HARD SAFETY CAP: If population exceeds 10,000, trigger immediate 95% mortality disaster
             if len(agents) >= 10000:
                 print("🚨 CRITICAL OVERPOPULATION: Ecological Collapse Triggered!")
                 agents, death_count, disaster_type = trigger_disaster(
-                    agents, max_generation, elapsed_time, override_mortality=0.90, silent=True, disaster_type_override="CRITICAL_OVERPOPULATION")
+                    agents, max_generation, elapsed_time, override_mortality=0.95, silent=True, disaster_type_override="CRITICAL_OVERPOPULATION")
                 last_disaster_generation = max_generation
                 for _ in range(death_count):
                     metrics_logger.record_death()
