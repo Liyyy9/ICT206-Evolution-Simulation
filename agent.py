@@ -177,16 +177,17 @@ def update_internal_state(a: Agent, dt: float, current_population: int = 0) -> N
         # Exponential penalty: at N=K, penalty_ratio=1; at N=2K, ratio=4; at N=3K, ratio=9
         # This creates quadratic pressure to prevent runaway growth
         density_ratio = current_population / cfg.CARRYING_CAPACITY
-        drain *= (1.0 + (density_ratio ** 2))  # Quadratic multiplier for exponential regulation
+        # Quadratic multiplier for exponential regulation
+        drain *= (1.0 + (density_ratio ** 2))
 
     # Age-based drain multiplier: young agents have reduced drain, older agents have increased
     # Age 0-30s: 50% drain (reproductive window)
-    # Age 30-60s: linearly ramp from 50% to 100% drain
+    # Age 30-60s: linearly ramp from 70% to 100% drain
     # Age 60+: 100% drain
-    age_drain_multiplier = 0.5  # Default for young agents
+    age_drain_multiplier = 0.70  # Default for young agents (increased from 0.5)
     if a.age > 30.0:
         progress = min((a.age - 30.0) / 30.0, 1.0)  # 0 to 1 over 30 seconds
-        age_drain_multiplier = 0.5 + (progress * 0.5)  # Ramp from 0.5 to 1.0
+        age_drain_multiplier = 0.70 + (progress * 0.30)  # Ramp from 0.70 to 1.0
 
     drain *= age_drain_multiplier
 

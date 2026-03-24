@@ -190,7 +190,7 @@ REPRODUCTION = {
     # px; agents must be within this distance to mate
     "MATE_RADIUS": 80.0,
     # seconds before SEEK_MATE fails and agent returns to wander
-    "MATE_SEEK_TIMEOUT": 15.0,
+    "MATE_SEEK_TIMEOUT": 5.0,
     # seconds before parent can mate again (must be > 0 to prevent runaway loops)
     "REPRO_COOLDOWN": 3.5,
     # energy drained from each parent on successful reproduction
