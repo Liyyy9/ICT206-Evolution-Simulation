@@ -268,7 +268,7 @@ def update_resources(bushes: List[FoodBush], dt: float) -> None:
 def draw_resources(screen: pygame.Surface, pond: Pond, bushes: List[FoodBush]) -> None:
     # Apply zoom scale for world coordinates
     z = cfg.ZOOM_SCALE
-    
+
     # --- POND: draw rim first (bigger circles), then water fill ---
     RIM_THICKNESS = 10
     for (x, y, r) in pond.circles:

@@ -206,8 +206,10 @@ def draw_agent_state_box(screen: pygame.Surface, agent: ag.Agent) -> None:
     box_width = max(icon_size + gap + 30, info_width) + padding_x * 2
     box_height = top_height + 8 + info_height + padding_y * 2
 
-    box_x = int(agent.x) - box_width // 2
-    box_y = int(agent.y) - cfg.AGENT_RADIUS - box_height - 15
+    # Convert world coordinates to display coordinates
+    box_x = int(agent.x * cfg.ZOOM_SCALE) - box_width // 2
+    box_y = int(agent.y * cfg.ZOOM_SCALE) - \
+        int(cfg.AGENT_RADIUS * cfg.ZOOM_SCALE) - box_height - 15
 
     # Draw rounded box
     box_rect = pygame.Rect(box_x, box_y, box_width, box_height)
@@ -246,8 +248,9 @@ def draw_agent_state_box(screen: pygame.Surface, agent: ag.Agent) -> None:
         current_y += line_surface.get_height() + 2
 
     # Draw small arrow pointing to agent (chatbox tail)
-    arrow_x = int(agent.x)
-    arrow_y = int(agent.y) - cfg.AGENT_RADIUS - 8
+    arrow_x = int(agent.x * cfg.ZOOM_SCALE)
+    arrow_y = int(agent.y * cfg.ZOOM_SCALE) - \
+        int(cfg.AGENT_RADIUS * cfg.ZOOM_SCALE) - 8
     pygame.draw.polygon(
         screen,
         box_color,
@@ -301,9 +304,9 @@ def draw_population_counter(screen: pygame.Surface, population: int, max_populat
     text_pop_surface = font_large.render(text_pop, True, (255, 255, 255))
     text_gen_surface = font_small.render(text_gen, True, (200, 200, 200))
 
-    # Position at top-right with padding
-    x = cfg.WIDTH - max(text_pop_surface.get_width(),
-                        text_gen_surface.get_width()) - 15
+    # Position at top-right with padding (use DISPLAY_WIDTH for screen coordinates)
+    x = cfg.DISPLAY_WIDTH - max(text_pop_surface.get_width(),
+                                text_gen_surface.get_width()) - 15
     y = 10
 
     # Calculate background height for both lines
@@ -640,9 +643,10 @@ def draw_reproduction_icon(screen: pygame.Surface, agents: list[ag.Agent]) -> No
         except:
             continue
 
-        # Draw above agent
-        icon_x = int(agent.x - icon_size / 2)
-        icon_y = int(agent.y - cfg.AGENT_RADIUS - 35)
+        # Draw above agent (convert world to display coordinates)
+        icon_x = int(agent.x * cfg.ZOOM_SCALE - icon_size / 2)
+        icon_y = int(agent.y * cfg.ZOOM_SCALE -
+                     cfg.AGENT_RADIUS * cfg.ZOOM_SCALE - 35)
         screen.blit(scaled_icon, (icon_x, icon_y))
 
 
@@ -697,8 +701,8 @@ def draw_agent_debug_panel(screen: pygame.Surface, agent: ag.Agent) -> None:
     panel_width = max_width + padding * 2
     panel_height = total_height + padding * 2
 
-    # Position in top-right (below population counter)
-    panel_x = cfg.WIDTH - panel_width - 10
+    # Position in top-right (below population counter, use DISPLAY_WIDTH for screen coordinates)
+    panel_x = cfg.DISPLAY_WIDTH - panel_width - 10
     panel_y = 90
 
     # Draw panel background

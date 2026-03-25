@@ -20,6 +20,30 @@ def format_elapsed_time(seconds: float) -> str:
     return f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
 
+def calculate_reproduction_chance(population: int) -> float:
+    """
+    Calculate density-dependent reproduction chance.
+    - Below REPRO_THRESHOLD: 1.0 (unrestricted)
+    - Above threshold: linear decay to 0.0 at MAX_POP
+    Returns: float between 0.0 and 1.0
+    """
+    if not cfg.DDG["ENABLED"]:
+        return 1.0
+
+    threshold = cfg.DDG["REPRO_THRESHOLD"]
+    max_pop = cfg.DDG["REPRO_MAX_POP"]
+
+    if population < threshold:
+        return 1.0
+
+    if population >= max_pop:
+        return 0.0
+
+    # Linear decay: 1.0 → 0.0 as population goes threshold → max_pop
+    repro_chance = 1.0 - ((population - threshold) / (max_pop - threshold))
+    return max(0.0, min(1.0, repro_chance))
+
+
 # Conditional pygame initialization based on headless mode
 if not cfg.HEADLESS_MODE:
     pygame.init()
@@ -41,12 +65,12 @@ def initialize_simulation():
     return agents, pond, bushes
 
 
-def trigger_disaster(agents, current_generation, elapsed_time, override_mortality=None, silent=False, disaster_type_override=None):
+def trigger_disaster(agents, current_generation, elapsed_time, override_mortality, silent=False, disaster_type_override=None):
     """
     Trigger a natural disaster that culls population.
-    If TARGET_WEAK is True, preferentially kills weaker agents.
+    Preferentially kills weaker agents (lower health).
     Args:
-        override_mortality: Optional mortality rate (0-1). If None, uses cfg.DISASTER_MORTALITY_RATE
+        override_mortality: Mortality rate (0-1). Required.
         silent: If True, skip the disaster description line (used for critical overpopulation)
         disaster_type_override: Optional disaster type string. If None, selects random from DISASTER_TYPES
     Returns tuple of (updated_agent_list, death_count, disaster_type).
@@ -54,17 +78,11 @@ def trigger_disaster(agents, current_generation, elapsed_time, override_mortalit
     import random
     disaster_type = disaster_type_override if disaster_type_override else random.choice(
         cfg.DISASTER_TYPES)
-    # Use override mortality if provided, otherwise use configured rate
-    mortality_rate = override_mortality if override_mortality is not None else cfg.DISASTER_MORTALITY_RATE
-    mortality_count = max(1, int(len(agents) * mortality_rate))
+    mortality_count = max(1, int(len(agents) * override_mortality))
 
-    if cfg.DISASTER_TARGET_WEAK:
-        # Sort by health (weakest first) and kill the weakest
-        agents_sorted = sorted(agents, key=lambda a: a.health)
-        agents_to_keep = agents_sorted[mortality_count:]
-    else:
-        # Random culling
-        agents_to_keep = random.sample(agents, len(agents) - mortality_count)
+    # Sort by health (weakest first) and kill the weakest
+    agents_sorted = sorted(agents, key=lambda a: a.health)
+    agents_to_keep = agents_sorted[mortality_count:]
 
     # Only print disaster description if not silent
     if not silent:
@@ -87,7 +105,7 @@ agents, pond, bushes = initialize_simulation()
 max_population = len(agents)  # Track max population ever reached
 max_generation = 1  # Track current generation
 start_time = time.time()  # Track simulation start time (real wall-clock)
-metrics_logger = metrics.MetricsLogger()  # Initialize metrics tracking
+metrics_logger = metrics.get_metrics_logger()  # Get singleton instance
 last_log_time = 0.0  # Last time we logged gen metrics
 last_displayed_generation = 0  # Track last generation displayed in headless mode
 LOG_INTERVAL = 10.0  # Log every 10 seconds
@@ -211,7 +229,8 @@ try:
                             # Manual disaster trigger
                             if len(agents) > 0 and not disaster_triggered_this_frame:
                                 agents, death_count, disaster_type = trigger_disaster(
-                                    agents, max_generation, elapsed_time)
+                                    agents, max_generation, elapsed_time,
+                                    override_mortality=cfg.DDG["DISASTER_STANDARD_MORTALITY"])
                                 last_disaster_generation = max_generation
                                 for _ in range(death_count):
                                     metrics_logger.record_death()
@@ -240,7 +259,7 @@ try:
 
         alive = []
         for a in agents:
-            if not sim.update_agent(a, dt, pond, bushes):
+            if not sim.update_agent(a, dt, pond, bushes, len(agents)):
                 continue
 
             alive.append(a)
@@ -305,23 +324,27 @@ try:
             last_displayed_generation = max_generation
 
         # DISASTER SYSTEM - Check if population exceeds threshold (headless mode only)
-        if cfg.HEADLESS_MODE and cfg.DISASTER_ENABLED and not disaster_triggered_this_frame:
-            # HARD SAFETY CAP: If population exceeds 10,000, trigger immediate 95% mortality disaster
-            if len(agents) >= 10000:
+        if cfg.HEADLESS_MODE and cfg.DDG["ENABLED"] and not disaster_triggered_this_frame:
+            # EMERGENCY THRESHOLD: Trigger immediate high-mortality disaster if population is critically high
+            if len(agents) >= cfg.DDG["DISASTER_EMERGENCY_THRESHOLD"]:
                 print("🚨 CRITICAL OVERPOPULATION: Ecological Collapse Triggered!")
                 agents, death_count, disaster_type = trigger_disaster(
-                    agents, max_generation, elapsed_time, override_mortality=0.95, silent=True, disaster_type_override="CRITICAL_OVERPOPULATION")
+                    agents, max_generation, elapsed_time,
+                    override_mortality=cfg.DDG["DISASTER_EMERGENCY_MORTALITY"],
+                    silent=True,
+                    disaster_type_override="CRITICAL_OVERPOPULATION")
                 last_disaster_generation = max_generation
                 for _ in range(death_count):
                     metrics_logger.record_death()
                 metrics_logger.record_disaster(disaster_type)
                 disaster_triggered_this_frame = True
-            # Standard threshold check: 85% mortality after waiting min_generations_apart
-            elif len(agents) > cfg.DISASTER_POPULATION_THRESHOLD:
+            # STANDARD THRESHOLD: Check if population exceeds standard disaster threshold
+            elif len(agents) > cfg.DDG["DISASTER_STANDARD_THRESHOLD"]:
                 # Check if enough generations have passed since last disaster
-                if max_generation - last_disaster_generation >= cfg.DISASTER_MIN_GENERATIONS_APART:
+                if max_generation - last_disaster_generation >= cfg.DDG["DISASTER_STANDARD_MIN_GENS"]:
                     agents, death_count, disaster_type = trigger_disaster(
-                        agents, max_generation, elapsed_time)
+                        agents, max_generation, elapsed_time,
+                        override_mortality=cfg.DDG["DISASTER_STANDARD_MORTALITY"])
                     last_disaster_generation = max_generation
                     for _ in range(death_count):
                         metrics_logger.record_death()

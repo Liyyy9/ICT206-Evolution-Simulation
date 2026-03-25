@@ -3,10 +3,10 @@ Metrics tracking and CSV logging for evolutionary data.
 Logs per-generation statistics to CSV for long-term analysis.
 """
 
+from __future__ import annotations
 import csv
 import os
 from datetime import datetime
-import agent as ag
 import traits as tr
 
 
@@ -25,10 +25,16 @@ class MetricsLogger:
         self.current_generation_disaster = None
         # Theoretical maximum for efficiency formula (used for fixed 0-1 normalization)
         self.theoretical_max_fitness = 2.5
+        self._initialized = False  # Guard against double initialization
         self._initialize_csv()
 
     def _initialize_csv(self):
         """Create CSV file with timestamp in csv_logs folder."""
+        # Prevent multiple initializations on startup
+        if self._initialized:
+            return
+        self._initialized = True
+
         # Create csv_logs folder if it doesn't exist
         log_dir = "csv_logs"
         if not os.path.exists(log_dir):
@@ -82,7 +88,7 @@ class MetricsLogger:
         """Record disaster type for current generation."""
         self.current_generation_disaster = disaster_type
 
-    def log_generation(self, agents: list[ag.Agent]):
+    def log_generation(self, agents: list):
         """
         Log metrics for the current generation.
         Only logs when generation actually changes (not on time interval).
@@ -176,5 +182,20 @@ class MetricsLogger:
         self.last_logged_generation = 0
         self.current_generation_disaster = None
 
+        # Allow a new CSV file to be created
+        self._initialized = False
+
         # Create a new CSV file for the next restart cycle
         self._initialize_csv()
+
+
+# Module-level singleton instance
+_metrics_logger_instance = None
+
+
+def get_metrics_logger():
+    """Get or create the singleton MetricsLogger instance."""
+    global _metrics_logger_instance
+    if _metrics_logger_instance is None:
+        _metrics_logger_instance = MetricsLogger()
+    return _metrics_logger_instance

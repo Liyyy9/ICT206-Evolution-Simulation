@@ -11,10 +11,15 @@ import traits as tr
 import config as cfg
 
 
-def is_eligible_for_mate_seeking(agent: ag.Agent) -> bool:
+def is_eligible_for_mate_seeking(agent: ag.Agent, population: int = 0) -> bool:
     """
     Check if agent can enter SEEK_MATE state.
     Requires: age >= 25s, hunger and thirst below SEEK thresholds.
+    With DDG enabled, applies stochastic reproduction chance based on population density.
+
+    Args:
+        agent: The agent to check
+        population: Current population size (0 = disable DDG chance check)
     """
     if agent.age < cfg.REPRODUCTION.get("MIN_MATE_AGE", 25.0):
         return False
@@ -29,6 +34,14 @@ def is_eligible_for_mate_seeking(agent: ag.Agent) -> bool:
     repro_cooldown = getattr(agent, "repro_cooldown", 0.0)
     if repro_cooldown > 0.0:
         return False
+
+    # Apply density-dependent reproduction chance if population provided
+    if population > 0 and cfg.DDG["ENABLED"]:
+        # Import here to avoid circular dependency
+        import main
+        chance = main.calculate_reproduction_chance(population)
+        if random.random() > chance:
+            return False
 
     return True
 

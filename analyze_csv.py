@@ -153,9 +153,11 @@ def create_plots(data, csv_file=None):
 
     # Plot 1: Population Growth
     ax = axes[0, 0]
-    ax.plot(x, data["population"], color='blue', linewidth=2, label='Population')
+    ax.plot(x, data["population"], color='blue',
+            linewidth=2, label='Population')
     # Add carrying capacity reference line
-    ax.axhline(y=10000, color='red', linestyle='--', linewidth=1.5, label='Population Ceiling (10k)')
+    ax.axhline(y=10000, color='red', linestyle='--',
+               linewidth=1.5, label='Population Ceiling (10k)')
     ax.set_ylabel("Population", fontsize=10, fontweight='bold')
     ax.set_xlabel("Generation")
     ax.legend(loc='best', fontsize=8)

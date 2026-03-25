@@ -38,10 +38,10 @@ ZOOM_SCALE = DISPLAY_WIDTH / WORLD_WIDTH if WORLD_WIDTH > 0 else 1.0
 FPS = 30
 
 # Simulation Mode
-HEADLESS_MODE = True  # Set to True for CSV-only mode (no visualization)
+HEADLESS_MODE = False  # Set to True for CSV-only mode (no visualization)
 # Max seconds to run (0 = infinite, set to 3600 for 1 hour)
 HEADLESS_MODE_DURATION = 0
-HEADLESS_MODE_MAX_GENERATION = 100  # Stop at generation (0 = infinite)
+HEADLESS_MODE_MAX_GENERATION = 500  # Stop at generation (0 = infinite)
 # Auto-restart when population crashes (only in headless mode)
 HEADLESS_MODE_AUTO_RESTART = True
 # Min population to trigger restart (if population drops below this, restart)
@@ -50,24 +50,16 @@ HEADLESS_MODE_MIN_POPULATION = 5
 HEADLESS_MODE_MIN_TIME_BETWEEN_RESTARTS = 60  # seconds
 
 # Agents
-NUM_AGENTS = 10
+NUM_AGENTS = 100
 AGENT_RADIUS = 8
 # Based off seconds (set to 180 for 3 minutes, 60 for 1 minute testing)
 MAX_AGE = 50.0  # Increased to help Gen 1 bootstrap on bigger world
 
-# Disaster System (natural population control)
-DISASTER_ENABLED = True  # Enable automatic disasters in headless mode
-# Trigger disaster when population exceeds this
-DISASTER_POPULATION_THRESHOLD = 300  # Test 5A: lowered from 500
-DISASTER_MIN_GENERATIONS_APART = 5  # Minimum generations between disasters
-# If True, preferentially kill weaker agents (lower health)
-DISASTER_TARGET_WEAK = True
-# Disaster mortality rate (hardset, not random)
-DISASTER_MORTALITY_RATE = 0.85  # Test 5A: fixed at 85%
+# Disaster type names (used for random disaster selection)
 DISASTER_TYPES = ["Plague", "Drought", "Disease",
                   "Famine", "Storm", "Earthquake",
                   "Tornado", "Volcanic Eruption",
-                  "Tsunami", "Meteor Strike",
+                  "Tsunami", "Meteor",
                   "Global Warming", "Alien Invasion",
                   "Avengers Woop-sie", "Fire Nation",
                   "Thanos Snap", "Typhoon",
@@ -76,8 +68,8 @@ DISASTER_TYPES = ["Plague", "Drought", "Disease",
                   "Giant Ant Colony", "Spaghetti Tornado",
                   "Cat Judgement Day", "Cheese Shortage Crisis",
                   "Banana Peel Pandemic", "Clown Invasion",
-                  "Godzilla Attack", "Volcanic Winters",
-                  "Asteroid"]  # Random disaster names
+                  "Godzilla", "Volcanic Winters",
+                  "Asteroid"]
 
 # Thresholds
 THRESHOLDS = {
@@ -130,7 +122,7 @@ RESOURCES = {
     "POND_RADIUS_MAX": 80,
 
     # bushes + food dots
-    "NUM_BUSHES": 4,  # More bushes across bigger world for competitive pressure
+    "NUM_BUSHES": 2,  # More bushes across bigger world for competitive pressure
     "BUSH_BLOB_CIRCLES": 3,
     "BUSH_BLOB_RADIUS_MIN": 26,
     "BUSH_BLOB_RADIUS_MAX": 42,
@@ -144,7 +136,7 @@ RESOURCES = {
     "FOOD_EDGE_MARGIN": 8,
     "FOOD_MIN_GAP": 10,
     "FOOD_SPAWN_ATTEMPTS": 200,
-    "FOOD_REGEN_SECONDS": 5.0,
+    "FOOD_REGEN_SECONDS": 10.0,
 
     # Pond
     "POND_SPARKLES": 25,
@@ -200,4 +192,22 @@ REPRODUCTION = {
 MUTATION = {
     "MUTATION_RATE": 0.12,                   # 12% chance to mutate each trait
     "MUTATION_STD_DEV": 0.15,                # Gaussian std dev for mutation nudge
+}
+
+# Density-Dependent Growth (DDG) - Natural population regulation
+DDG = {
+    "ENABLED": True,                         # Enable density-dependent growth
+    "REPRO_THRESHOLD": 1000,                 # Below this pop, repro_chance = 1.0
+    # Minimum population for reproduction scaling
+    "REPRO_MIN_POP": 1000,
+    "REPRO_MAX_POP": 10000,                  # Population where repro_chance reaches 0%
+    # Trigger standard disaster at this population
+    "DISASTER_STANDARD_THRESHOLD": 5000,
+    # Minimum generations between standard disasters
+    "DISASTER_STANDARD_MIN_GENS": 15,
+    "DISASTER_STANDARD_MORTALITY": 0.85,     # Mortality rate for standard disasters
+    # Emergency collapse at this population
+    "DISASTER_EMERGENCY_THRESHOLD": 10000,
+    # Mortality rate for emergency (ignore timer)
+    "DISASTER_EMERGENCY_MORTALITY": 0.98,
 }

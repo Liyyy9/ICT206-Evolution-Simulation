@@ -117,7 +117,7 @@ def create_agent(agent_id: int, width: int, height: int, radius: int) -> Agent:
     return a
 
 
-def update_internal_state(a: Agent, dt: float) -> None:
+def update_internal_state(a: Agent, dt: float, population: int = 0) -> None:
     """
     Updates stats using dt (seconds).
     Sets a.alive=False when dead. (main.py removes dead agents)
@@ -134,7 +134,8 @@ def update_internal_state(a: Agent, dt: float) -> None:
     # Change over time (dt-based) - apply metabolism multiplier
     a.hunger += tr.effective_drain(cfg.RATES["HUNGER_UP"], traits_obj) * dt
     a.thirst += tr.effective_drain(cfg.RATES["THIRST_UP"], traits_obj) * dt
-    a.energy -= tr.effective_drain(cfg.RATES["ENERGY_DOWN"], traits_obj) * dt
+    a.energy -= tr.effective_drain(cfg.RATES["ENERGY_DOWN"],
+                                   traits_obj) * dt
 
     # Clamp core stats
     a.hunger = clamp(a.hunger, 0.0, 100.0)

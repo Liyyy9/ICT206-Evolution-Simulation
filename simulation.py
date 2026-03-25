@@ -97,12 +97,12 @@ def process_reproduction(agents: list[ag.Agent]) -> list[ag.Agent]:
     return newborns
 
 
-def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBush]) -> bool:
+def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBush], population: int = 0) -> bool:
     """
     Update one agent for one frame.
     Returns True if agent remains alive, False if dead (caller removes it).
     """
-    ag.update_internal_state(a, dt)
+    ag.update_internal_state(a, dt, population)
     if not a.alive:
         return False
 
@@ -132,7 +132,7 @@ def update_agent(a: ag.Agent, dt: float, pond: res.Pond, bushes: list[res.FoodBu
     current_action = getattr(a, "action", "WANDER")
 
     # Try to enter SEEK_MATE if eligible
-    if current_action != "SEEK_MATE" and repro.is_eligible_for_mate_seeking(a):
+    if current_action != "SEEK_MATE" and repro.is_eligible_for_mate_seeking(a, population):
         a.action = "SEEK_MATE"
         a.mate_seek_timer = cfg.REPRODUCTION["MATE_SEEK_TIMEOUT"]
 
