@@ -118,11 +118,8 @@ def attempt_reproduction(
     if random.random() > prob:
         return []  # Reproduction attempt failed
 
-    # Success: create children (random number within min-max range)
-    min_offspring = cfg_obj.REPRODUCTION.get("OFFSPRING_MIN", 1)
-    max_offspring = cfg_obj.REPRODUCTION.get("OFFSPRING_MAX", 4)
-    num_offspring = random.randint(min_offspring, max_offspring)
-    children = [make_child(parent_a, parent_b) for _ in range(num_offspring)]
+    # Success: create 1 child per successful reproduction
+    children = [make_child(parent_a, parent_b)]
 
     # Apply SHORT cooldown to both parents (prevents immediate re-mating with same partner)
     cooldown = cfg_obj.REPRODUCTION.get("REPRO_COOLDOWN", 3.0)

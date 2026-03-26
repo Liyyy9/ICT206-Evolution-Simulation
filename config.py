@@ -38,7 +38,7 @@ ZOOM_SCALE = DISPLAY_WIDTH / WORLD_WIDTH if WORLD_WIDTH > 0 else 1.0
 FPS = 30
 
 # Simulation Mode
-HEADLESS_MODE = False  # Set to True for CSV-only mode (no visualization)
+HEADLESS_MODE = True  # Set to True for CSV-only mode (no visualization)
 # Max seconds to run (0 = infinite, set to 3600 for 1 hour)
 HEADLESS_MODE_DURATION = 0
 HEADLESS_MODE_MAX_GENERATION = 500  # Stop at generation (0 = infinite)
@@ -184,9 +184,6 @@ REPRODUCTION = {
     "REPRO_ENERGY_COST": 40.0,
     "SPAWN_OFFSET_RANGE": 30.0,              # px; random offset from parent midpoint
     "REPRO_ANIMATION_DURATION": 1.0,         # seconds to show love icon
-    # range of offspring per successful mating (random between min and max, inclusive)
-    "OFFSPRING_MIN": 1,
-    "OFFSPRING_MAX": 1,  # Test 5A: reduced from 2 (max 1 child per mating)
 }
 
 MUTATION = {
