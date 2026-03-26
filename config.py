@@ -39,7 +39,7 @@ FPS = 30
 
 # Simulation Mode
 HEADLESS_MODE = True  # Set to True for CSV-only mode (no visualization)
-# Max seconds to run (0 = infinite, set to 3600 for 1 hour)
+# seconds to run in headless mode (0 = infinite)
 HEADLESS_MODE_DURATION = 0
 HEADLESS_MODE_MAX_GENERATION = 500  # Stop at generation (0 = infinite)
 # Auto-restart when population crashes (only in headless mode)
@@ -104,7 +104,7 @@ RATES = {
     "ENERGY_DOWN": 0.8,        # 100->40 in 75s
 
     # Health model - balanced for early survival + late population control
-    "HEALTH_REGEN": 0.35,               # increased for Gen 1 survival
+    "HEALTH_REGEN": 0.35,
     # moderate baseline drain
     "HEALTH_DRAIN_BASE": 0.85,
 
@@ -122,7 +122,7 @@ RESOURCES = {
     "POND_RADIUS_MAX": 80,
 
     # bushes + food dots
-    "NUM_BUSHES": 2,  # More bushes across bigger world for competitive pressure
+    "NUM_BUSHES": 2,
     "BUSH_BLOB_CIRCLES": 3,
     "BUSH_BLOB_RADIUS_MIN": 26,
     "BUSH_BLOB_RADIUS_MAX": 42,
@@ -147,7 +147,7 @@ RESOURCES = {
     "EAT_AMOUNT": 30.0,
     "EAT_PAUSE": 0.25,
 
-    "DRINK_FULL_LEVEL": 10.0,    # stop drinking
+    "DRINK_FULL_LEVEL": 10.0,   # stop drinking
     "DRINK_INTERVAL": 0.5,      # how long they stop at a pond
     "DRINK_AMOUNT": 4.0,        # how much thirst is reduced
     "ENERGY_FROM_DRINK": 8.0,
@@ -155,7 +155,7 @@ RESOURCES = {
 }
 
 SENSING = {
-    "VISION_RADIUS": 130.0,        # px; reduced to force competition on larger world
+    "VISION_RADIUS": 130.0,
     "STEER_STRENGTH": 0.18,        # 0..1; higher = more direct steering
     "WANDER_JITTER": 0.35,         # how much random turn during wandering
     "TARGET_REACHED_DIST": 14.0,   # px; when close enough to food, treat as "arrived"
@@ -170,20 +170,18 @@ MEMORY = {
 }
 
 REPRODUCTION = {
-    "MIN_MATE_AGE": 12.0,                    # lowered for Gen 1 bootstrap
-    # success rate when two mates are in proximity
-    # aggressive reduction for population control
+    "MIN_MATE_AGE": 12.0,
+    # Base chance to reproduce when conditions are met
     "REPRODUCTION_PROBABILITY": 0.40,
-    # px; agents must be within this distance to mate
-    "MATE_RADIUS": 80.0,
+    "MATE_RADIUS": 80.0,                # px; agents must be within this distance to mate
     # seconds before SEEK_MATE fails and agent returns to wander
     "MATE_SEEK_TIMEOUT": 15.0,
-    # seconds before parent can mate again (must be > 0 to prevent runaway loops)
+    # seconds after successful reproduction during which parents cannot reproduce again
     "REPRO_COOLDOWN": 5.0,
-    # energy drained from each parent on successful reproduction
+    # Energy cost applied to parents on successful reproduction
     "REPRO_ENERGY_COST": 40.0,
-    "SPAWN_OFFSET_RANGE": 30.0,              # px; random offset from parent midpoint
-    "REPRO_ANIMATION_DURATION": 1.0,         # seconds to show love icon
+    "SPAWN_OFFSET_RANGE": 30.0,
+    "REPRO_ANIMATION_DURATION": 1.0,
 }
 
 MUTATION = {
@@ -200,11 +198,11 @@ DDG = {
     "REPRO_MAX_POP": 10000,                  # Population where repro_chance reaches 0%
     # Trigger standard disaster at this population
     "DISASTER_STANDARD_THRESHOLD": 5000,
-    # Minimum generations between standard disasters
+    # Min generations between standard disasters
     "DISASTER_STANDARD_MIN_GENS": 15,
     "DISASTER_STANDARD_MORTALITY": 0.85,     # Mortality rate for standard disasters
     # Emergency collapse at this population
     "DISASTER_EMERGENCY_THRESHOLD": 10000,
-    # Mortality rate for emergency (ignore timer)
+    # Mortality rate for emergency disasters
     "DISASTER_EMERGENCY_MORTALITY": 0.98,
 }
